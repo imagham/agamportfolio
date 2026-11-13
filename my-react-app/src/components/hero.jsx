@@ -1,307 +1,319 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import saya from "../assets/saya.png";
 
-gsap.registerPlugin(useGSAP);
+gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 /*
   Font (tambahkan sekali di index.html / CSS global):
-  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  KONSEP: layar tertutup "rambut" (ribuan helai di canvas). Mesin clipper menyapu dua kali dan
-  mencukur area judul, lalu kursormu berubah jadi bingkai fokus kamera: gerakkan untuk mencukur,
-  klik untuk memotret (flash). Barber + Photographer + Engineer dalam satu interaksi.
+  FOTO: src/assets/saya.png HARUS PNG transparan (background dihapus), kalau tidak
+  kata raksasa tidak bisa lewat di belakang badanmu.
+
+  KONSEP (3 lapis, dari belakang ke depan):
+    1. Kata raksasa solid          -> terlihat di kiri-kanan kepala
+    2. Fotomu (cutout)             -> menutupi kata di belakangnya
+    3. Kata yang sama, hanya garis -> hanya muncul di tengah, "menembus" wajahmu
+
+  PENYETELAN: kalau kata terasa terlalu tinggi/rendah terhadap wajahmu, ubah WORD_TOP dan PORTRAIT_H.
 */
-const DISPLAY = "font-['Unbounded',system-ui,sans-serif]";
-const BODY = "font-['Plus_Jakarta_Sans',system-ui,sans-serif]";
-const TEXT = "A Software Engineer, Barber, and Photographer driven by curiosity and the passion to create meaningful things.";
-const ROLES = ["Engineer", "Barber", "Photographer"];
+const WORD = "IMAGHAM";
+const WORD_TOP = 47; // posisi tengah kata dari atas hero (%)
+const PORTRAIT_H = 92; // tinggi foto relatif terhadap hero (%)
 
-const COL = 5; // lebar satu helai (px)
-const ROW = 18; // tinggi satu baris helai (px)
-const SHADES = ["#25232a", "#2b2830", "#312e37"];
-const USER_R = 64; // radius cukur kursor (px)
-const REGROW = 14; // detik sampai rambut tumbuh penuh lagi
-const smooth = (a, b, x) => {
-  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
-  return t * t * (3 - 2 * t);
-};
+const BIG = "font-['Anton',Impact,'Arial_Narrow',sans-serif]";
+const BODY = "font-['Plus_Jakarta_Sans',system-ui,sans-serif]";
+const ACCENT = "#FFC857";
+const SILVER = "#D3DAD9";
+
+const TAGLINE = "Where Technology Meets Creativity.";
+const TEXT = "A Software Engineer, Barber, and Photographer driven by curiosity and the passion to create meaningful things.";
+const ROLES = ["Software Engineer", "Barber", "Photographer"];
+
+const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D3DAD9]";
+
+const GRAIN = `url("data:image/svg+xml,${encodeURIComponent(
+  "<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(#n)'/></svg>",
+)}")`;
+
+/* Kata raksasa dipecah per huruf supaya tiap huruf bisa dianimasikan */
+function BigWord({ outline }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`depth-word pointer-events-none flex select-none justify-center whitespace-nowrap uppercase leading-[0.82] ${BIG}`}
+      style={{
+        fontSize: "clamp(7rem, min(29vw, 62vh), 40rem)",
+        ...(outline
+          ? { color: "transparent", WebkitTextStroke: `2px ${ACCENT}` }
+          : { color: SILVER }),
+      }}
+    >
+      {[...WORD].map((ch, i) => (
+        <span key={i} data-i={i} className="big-char inline-block">
+          {ch}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function LongArrow({ className = "" }) {
+  return (
+    <svg width="64" height="12" viewBox="0 0 64 12" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className}>
+      <line x1="1" y1="6" x2="62" y2="6" />
+      <polyline points="56 1 62 6 56 11" />
+    </svg>
+  );
+}
+
+/* Siluet cadangan kalau foto gagal dimuat */
+function Silhouette() {
+  return (
+    <svg viewBox="0 0 400 500" aria-hidden="true" className="absolute bottom-0 left-1/2 h-[88%] -translate-x-1/2">
+      <defs>
+        <linearGradient id="sil" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#715A5A" />
+          <stop offset="1" stopColor="#44444E" />
+        </linearGradient>
+      </defs>
+      <circle cx="200" cy="150" r="74" fill="url(#sil)" />
+      <path d="M30 500 C30 370 110 305 200 305 C290 305 370 370 370 500 Z" fill="url(#sil)" />
+    </svg>
+  );
+}
 
 export default function Hero() {
   const heroRef = useRef(null);
+  const [missing, setMissing] = useState(false);
 
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
-      const root = heroRef.current;
+      const mid = (WORD.length - 1) / 2;
 
-      mm.add("(prefers-reduced-motion: reduce)", () => {
-        gsap.set(".hair, .cursor, .hint, .flash", { display: "none" });
+      /* ================= Animasi otomatis ================= */
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        gsap
+          .timeline({ defaults: { ease: "power4.out" } })
+          .from(".topbar > *", { y: -18, opacity: 0, duration: 0.8, stagger: 0.1 })
+          .from(".big-char", { scaleY: 0, transformOrigin: "50% 100%", duration: 1.1, stagger: { each: 0.07, from: "start" } }, "-=0.5")
+          .from(".portrait", { y: 90, opacity: 0, scale: 1.04, duration: 1.4 }, "-=0.9")
+          .from(".word-front", { opacity: 0, duration: 1 }, "-=0.5")
+          .from(".fade-in", { opacity: 0, y: 16, duration: 0.8, stagger: 0.1 }, "-=0.7");
+
+        /* Foto "bernapas" */
+        gsap.to(".breathe", { y: -8, duration: 3.5, ease: "sine.inOut", yoyo: true, repeat: -1 });
+
+        /* Ticker peran di kiri atas: ganti peran tiap ~2 detik */
+        const n = ROLES.length;
+        const tick = gsap.timeline({ repeat: -1 });
+        for (let i = 1; i <= n; i++) {
+          tick.to(".ticker-list", { yPercent: -(100 / (n + 1)) * i, duration: 0.6, ease: "power3.inOut" }, "+=1.8");
+        }
+        tick.set(".ticker-list", { yPercent: 0 });
+
+        /* Saat scroll: huruf menyebar dari tengah, foto membesar sedikit.
+           Memakai posisi scroll absolut (bukan trigger elemen) karena Hero bisa sticky di LandingPage. */
+        const range = { start: 0, end: () => window.innerHeight * 0.8, scrub: true };
+        gsap.to(".big-char", { x: (i, el) => (Number(el.dataset.i) - mid) * 70, ease: "none", scrollTrigger: range });
+        gsap.to(".breathe", { scale: 1.07, transformOrigin: "50% 100%", ease: "none", scrollTrigger: range });
       });
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        const canvas = root.querySelector(".hair");
-        const ctx = canvas.getContext("2d");
-        const cursor = root.querySelector(".cursor");
-        let W, H, cols, rows, h, shade, lock;
-        let dirty = true;
-        let live = false;
-        let last = null;
+      /* ================= Interaksi kursor (desktop saja) ================= */
+      mm.add("(prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)", () => {
+        const root = heroRef.current;
 
-        /* ---------- 1. Ladang rambut: satu helai = satu sel di grid ---------- */
-        const build = () => {
-          const dpr = Math.min(window.devicePixelRatio || 1, 2);
-          W = root.clientWidth;
-          H = root.clientHeight;
-          canvas.width = W * dpr;
-          canvas.height = H * dpr;
-          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-          cols = Math.ceil(W / COL);
-          rows = Math.ceil(H / ROW);
-          h = new Float32Array(cols * rows).fill(1);
-          lock = new Uint8Array(cols * rows);
-          shade = new Uint8Array(cols * rows).map(() => (Math.random() * 3) | 0);
-          dirty = true;
+        // quickTo untuk semua elemen yang cocok dengan selector
+        const layer = (sel, dur) => {
+          const els = gsap.utils.toArray(sel);
+          const xs = els.map((el) => gsap.quickTo(el, "x", { duration: dur, ease: "power3.out" }));
+          const ys = els.map((el) => gsap.quickTo(el, "y", { duration: dur, ease: "power3.out" }));
+          return { x: (v) => xs.forEach((f) => f(v)), y: (v) => ys.forEach((f) => f(v)) };
         };
+        // Kedua lapis kata bergerak SAMA, supaya garis dan huruf solid tetap tepat bertumpuk.
+        // Foto bergerak berlawanan, jadi huruf terasa "meluncur" melewati wajahmu.
+        const words = layer(".depth-word", 1);
+        const face = layer(".depth-face", 0.8);
 
-        const shave = (x, y, R) => {
-          const c0 = Math.max(0, ((x - R) / COL) | 0);
-          const c1 = Math.min(cols - 1, ((x + R) / COL) | 0);
-          const r0 = Math.max(0, ((y - R) / ROW) | 0);
-          const r1 = Math.min(rows - 1, ((y + R) / ROW) | 0);
-          for (let r = r0; r <= r1; r++) {
-            for (let c = c0; c <= c1; c++) {
-              const d = Math.hypot(c * COL + COL / 2 - x, r * ROW + ROW / 2 - y);
-              const f = smooth(R * 0.5, R, d); // tepi lembut = efek fade
-              const k = r * cols + c;
-              if (f < h[k]) {
-                h[k] = f;
-                dirty = true;
-              }
-            }
-          }
-        };
-
-        // Isi celah saat kursor bergerak cepat
-        const move = (x, y, R) => {
-          if (last) {
-            const dx = x - last.x;
-            const dy = y - last.y;
-            const n = Math.ceil(Math.hypot(dx, dy) / (R * 0.35));
-            for (let i = 1; i <= n; i++) shave(last.x + (dx * i) / n, last.y + (dy * i) / n, R);
-          } else shave(x, y, R);
-          last = { x, y };
-        };
-
-        const draw = () => {
-          ctx.clearRect(0, 0, W, H);
-          for (let s = 0; s < 3; s++) {
-            ctx.fillStyle = SHADES[s];
-            ctx.beginPath();
-            for (let r = 0; r < rows; r++) {
-              for (let c = 0; c < cols; c++) {
-                const k = r * cols + c;
-                if (shade[k] !== s || h[k] < 0.02) continue;
-                ctx.rect(c * COL - 0.25, r * ROW - 0.25, COL + 0.5, h[k] * ROW + (h[k] > 0.98 ? 0.5 : 0));
-              }
-            }
-            ctx.fill();
-          }
-        };
-
-        // Rambut tumbuh lagi pelan, kecuali area judul yang sudah dikunci
-        const tick = (_, dt) => {
-          const g = dt / 1000 / REGROW;
-          for (let k = 0; k < h.length; k++) {
-            if (!lock[k] && h[k] < 1) {
-              h[k] = Math.min(1, h[k] + g);
-              dirty = true;
-            }
-          }
-          if (dirty) {
-            draw();
-            dirty = false;
-          }
-        };
-
-        const headRect = () => {
-          const rr = root.getBoundingClientRect();
-          const hl = root.querySelector(".headline").getBoundingClientRect();
-          return { L: hl.left - rr.left, T: hl.top - rr.top, R: hl.right - rr.left, B: hl.bottom - rr.top, ox: rr.left, oy: rr.top };
-        };
-
-        // Kunci sel di area judul yang sudah bersih supaya teks tetap terbaca
-        const lockHeadline = (all) => {
-          const { L, T, R, B } = headRect();
-          for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-              const x = c * COL + COL / 2;
-              const y = r * ROW + ROW / 2;
-              const k = r * cols + c;
-              if (x > L - 8 && x < R + 8 && y > T - 8 && y < B + 8 && (all || h[k] < 0.35)) {
-                h[k] = 0;
-                lock[k] = 1;
-              }
-            }
-          }
-          dirty = true;
-        };
-
-        build();
-        gsap.ticker.add(tick);
-
-        /* ---------- 2. UI masuk setelah sapuan pertama ---------- */
-        gsap.set(cursor, { xPercent: -50, yPercent: -50, opacity: 0 });
-        const hero = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
-        hero.from(".ui-in", { y: 24, opacity: 0, duration: 0.8, stagger: 0.1, clearProps: "transform,opacity" });
-        gsap.from(".navbar", { y: -30, opacity: 0, duration: 0.9, delay: 0.2, ease: "power3.out" });
-
-        /* ---------- 3. Sapuan clipper otomatis: dua jalur melewati judul ---------- */
-        let seen = false;
-        try {
-          seen = sessionStorage.getItem("intro-seen") === "1";
-          sessionStorage.setItem("intro-seen", "1");
-        } catch {
-          /* storage tidak tersedia, abaikan */
-        }
-
-        const { L, T, R: right, B, ox, oy } = headRect();
-        const lh = (B - T) / 2;
-        const R = lh * 1.1;
-        const p = { x: L - R, y: T + lh * 0.5 };
-        const sweep = gsap.timeline({
-          onUpdate: () => {
-            move(p.x, p.y, R);
-            gsap.set(cursor, { x: p.x + ox, y: p.y + oy, width: R * 2, height: R * 2, opacity: 1 });
-          },
-          onComplete: () => {
-            lockHeadline(false);
-            last = null;
-            live = true;
-            gsap.to(cursor, { opacity: 0, width: USER_R * 2, height: USER_R * 2, duration: 0.4 });
-          },
-        });
-        sweep
-          .to(p, { x: right + R, duration: 1.5, ease: "power2.inOut" })
-          .to(p, { y: T + lh * 1.5, duration: 0.35, ease: "power2.inOut" })
-          .to(p, { x: L - R, duration: 1.5, ease: "power2.inOut" })
-          .add(() => hero.play(), 1.6);
-        if (seen) sweep.timeScale(6);
-
-        /* ---------- 4. Kursor = bingkai fokus kamera yang mencukur ---------- */
-        const cx = gsap.quickTo(cursor, "x", { duration: 0.25, ease: "power3.out" });
-        const cy = gsap.quickTo(cursor, "y", { duration: 0.25, ease: "power3.out" });
-        let hinted = false;
+        gsap.set(".spot", { xPercent: -50, yPercent: -50, x: root.clientWidth / 2, y: root.clientHeight / 2, opacity: 0 });
+        const sx = gsap.quickTo(".spot", "x", { duration: 0.7, ease: "power3.out" });
+        const sy = gsap.quickTo(".spot", "y", { duration: 0.7, ease: "power3.out" });
+        let spotOn = false;
 
         const onMove = (e) => {
-          if (!live) return;
-          const rr = root.getBoundingClientRect();
-          const x = e.clientX - rr.left;
-          const y = e.clientY - rr.top;
-          if (y < 0 || y > rr.height) {
-            last = null;
-            gsap.to(cursor, { opacity: 0, duration: 0.2 });
-            return;
+          const r = root.getBoundingClientRect();
+          const nx = ((e.clientX - r.left) / r.width - 0.5) * 2; // -1..1
+          const ny = ((e.clientY - r.top) / r.height - 0.5) * 2;
+          words.x(nx * -26);
+          words.y(ny * -10);
+          face.x(nx * 14);
+          face.y(ny * 8);
+          sx(e.clientX - r.left);
+          sy(e.clientY - r.top);
+          if (!spotOn) {
+            spotOn = true;
+            gsap.to(".spot", { opacity: 1, duration: 0.8 });
           }
-          move(x, y, USER_R);
-          cx(e.clientX);
-          cy(e.clientY);
-          gsap.to(cursor, { opacity: 1, duration: 0.2, overwrite: "auto" });
-          if (!hinted) {
-            hinted = true;
-            gsap.to(".hint", { opacity: 0, duration: 0.6 });
-          }
-        };
-
-        // Klik = potret: flash, bingkai menciut, cukuran lebih lebar
-        const onDown = (e) => {
-          if (!live || e.target.closest("a, button")) return;
-          const rr = root.getBoundingClientRect();
-          shave(e.clientX - rr.left, e.clientY - rr.top, USER_R * 2.2);
-          gsap.fromTo(".flash", { opacity: 0.35 }, { opacity: 0, duration: 0.45, ease: "power2.out" });
-          gsap.fromTo(cursor, { scale: 0.8 }, { scale: 1, duration: 0.5, ease: "back.out(3)" });
         };
         const onLeave = () => {
-          last = null;
-          gsap.to(cursor, { opacity: 0, duration: 0.2 });
+          [words, face].forEach((l) => {
+            l.x(0);
+            l.y(0);
+          });
+          spotOn = false;
+          gsap.to(".spot", { opacity: 0, duration: 0.6 });
         };
+        root.addEventListener("pointermove", onMove);
+        root.addEventListener("pointerleave", onLeave);
 
-        let rt;
-        const onResize = () => {
-          clearTimeout(rt);
-          rt = setTimeout(() => {
-            build();
-            lockHeadline(true);
-          }, 150);
-        };
-
-        window.addEventListener("pointermove", onMove);
-        window.addEventListener("pointerdown", onDown);
-        window.addEventListener("resize", onResize);
-        document.addEventListener("pointerleave", onLeave);
+        // Tombol magnetik
+        const cleanups = gsap.utils.toArray(".magnet").map((el) => {
+          const mx = gsap.quickTo(el, "x", { duration: 0.5, ease: "power3.out" });
+          const my = gsap.quickTo(el, "y", { duration: 0.5, ease: "power3.out" });
+          const move = (e) => {
+            const r = el.getBoundingClientRect();
+            mx((e.clientX - (r.left + r.width / 2)) * 0.3);
+            my((e.clientY - (r.top + r.height / 2)) * 0.3);
+          };
+          const leave = () => {
+            mx(0);
+            my(0);
+          };
+          el.addEventListener("pointermove", move);
+          el.addEventListener("pointerleave", leave);
+          return () => {
+            el.removeEventListener("pointermove", move);
+            el.removeEventListener("pointerleave", leave);
+          };
+        });
 
         return () => {
-          gsap.ticker.remove(tick);
-          clearTimeout(rt);
-          window.removeEventListener("pointermove", onMove);
-          window.removeEventListener("pointerdown", onDown);
-          window.removeEventListener("resize", onResize);
-          document.removeEventListener("pointerleave", onLeave);
+          root.removeEventListener("pointermove", onMove);
+          root.removeEventListener("pointerleave", onLeave);
+          cleanups.forEach((fn) => fn());
         };
       });
     },
     { scope: heroRef },
   );
 
-  const corner = "absolute size-3 border-[#D3DAD9]";
-
   return (
-    <main ref={heroRef} className={`relative flex min-h-screen touch-pan-y flex-col overflow-hidden bg-[radial-gradient(ellipse_at_30%_40%,#5a5a66_0%,#44444E_35%,#2f2d35_100%)] px-6 pb-16 pt-7 text-[#D3DAD9] md:h-screen md:px-12 md:pb-0 lg:px-20 ${BODY}`}>
-      <nav className="navbar relative z-20 mx-auto flex w-full max-w-7xl items-center justify-between rounded-full border border-[#D3DAD9]/15 bg-[#2a2830]/70 px-6 py-3.5 backdrop-blur-xl">
-        <a href="#" className={`${DISPLAY} text-base font-bold`}>imagham</a>
-        <div className="hidden items-center gap-8 text-sm font-medium text-[#D3DAD9]/70 md:flex lg:gap-12">
-          <a href="#about" className="transition hover:text-[#D3DAD9]">About</a>
-          <a href="#works" className="transition hover:text-[#D3DAD9]">Works</a>
-          <a href="#gallery" className="transition hover:text-[#D3DAD9]">Gallery</a>
-        </div>
-        <a href="#contact" className="rounded-full bg-[#D3DAD9] px-5 py-2.5 text-sm font-semibold text-[#37353E] transition hover:bg-white">Let's Talk</a>
-      </nav>
+    <main
+      ref={heroRef}
+      className={`relative min-h-[100svh] overflow-hidden bg-[radial-gradient(ellipse_at_50%_38%,#44444E_0%,#2a282f_68%)] text-[#D3DAD9] ${BODY}`}
+    >
+      <h1 className="sr-only">Imagham: Software Engineer, Barber, and Photographer</h1>
 
-      <section className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center py-12 md:py-0">
-        {/* Judul ada di bawah rambut: baru terbaca setelah dicukur */}
-        <h1 className={`headline relative z-0 ${DISPLAY} text-[clamp(1.9rem,5.4vw,5.5rem)] font-bold leading-[1.1] tracking-[-0.04em]`}>
-          <span className="block">Where Technology</span>
-          <span className="block text-transparent [-webkit-text-stroke:1.5px_#D3DAD9]">Meets Creativity.</span>
-        </h1>
+      {/* Latar: spotlight kursor + grain film */}
+      <div
+        aria-hidden="true"
+        className="spot pointer-events-none absolute left-0 top-0 z-0 size-[38rem] rounded-full bg-[radial-gradient(circle,rgba(255,200,87,0.12),transparent_65%)] opacity-0"
+      />
 
-        <div className="relative z-10 mt-8 max-w-xl">
-          <ul className="ui-in flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold" aria-label="Peran">
-            {ROLES.map((r, i) => (
-              <li key={r} className={i ? "border-l border-[#D3DAD9]/30 pl-6" : ""}>{r}</li>
-            ))}
-          </ul>
-          <p className="ui-in mt-5 text-base leading-relaxed text-[#D3DAD9]/80 md:text-lg">{TEXT}</p>
-          <div className="ui-in mt-7 flex flex-wrap gap-4">
-            <a href="#about" className="rounded-full bg-[#D3DAD9] px-8 py-3.5 font-semibold text-[#37353E] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D3DAD9]">Get Started</a>
-            <a href="#works" className="rounded-full border border-[#D3DAD9]/40 bg-[#2a2830]/60 px-8 py-3.5 font-semibold backdrop-blur transition hover:border-[#D3DAD9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D3DAD9]">View Works</a>
+      {/* LAPIS 1: kata raksasa solid (paling belakang) */}
+      <div className="pointer-events-none absolute inset-x-0 z-[1] -translate-y-1/2" style={{ top: `${WORD_TOP}%` }}>
+        <BigWord />
+      </div>
+
+      {/* LAPIS 2: foto */}
+      <div
+        className="pointer-events-none absolute bottom-0 left-1/2 z-10 w-[min(92vw,62rem)] -translate-x-1/2"
+        style={{ height: `${PORTRAIT_H}%` }}
+      >
+        <div className="portrait absolute inset-0 [mask-image:linear-gradient(to_top,transparent_0,black_14%)]">
+          <div className="depth-face absolute inset-0">
+            <div className="breathe absolute inset-0">
+              {missing ? (
+                <Silhouette />
+              ) : (
+                <img
+                  src={saya}
+                  alt="Portrait of Imagham"
+                  onError={() => setMissing(true)}
+                  className="absolute inset-0 size-full object-contain object-bottom"
+                />
+              )}
+            </div>
           </div>
         </div>
-      </section>
-
-      {/* Lapisan rambut di atas judul, di bawah UI */}
-      <canvas aria-hidden="true" className="hair pointer-events-none absolute inset-0 z-[1] h-full w-full" />
-
-      <p className="hint ui-in pointer-events-none absolute bottom-6 right-6 z-10 hidden text-xs text-[#D3DAD9]/60 md:block">Move to shave. Click to shoot.</p>
-
-      {/* Kursor: bingkai fokus kamera */}
-      <div aria-hidden="true" className="cursor pointer-events-none fixed left-0 top-0 z-[60] size-32 opacity-0 [@media(hover:none)]:hidden">
-        <span className={`${corner} left-0 top-0 border-l-2 border-t-2`} />
-        <span className={`${corner} right-0 top-0 border-r-2 border-t-2`} />
-        <span className={`${corner} bottom-0 left-0 border-b-2 border-l-2`} />
-        <span className={`${corner} bottom-0 right-0 border-b-2 border-r-2`} />
-        <span className="absolute left-1/2 top-1/2 size-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#D3DAD9]" />
       </div>
-      <div aria-hidden="true" className="flash pointer-events-none fixed inset-0 z-[70] bg-white opacity-0" />
+
+      {/* LAPIS 3: kata yang sama, hanya garis, dibatasi di tengah supaya "menembus" wajah */}
+      <div
+        className="word-front pointer-events-none absolute inset-x-0 z-20 -translate-y-1/2 [mask-image:linear-gradient(90deg,transparent_32%,black_41%,black_59%,transparent_68%)]"
+        style={{ top: `${WORD_TOP}%` }}
+      >
+        <BigWord outline />
+      </div>
+
+      {/* Gradasi bawah agar teks tetap terbaca di atas badan foto */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[38%] bg-gradient-to-t from-[#2a282f] via-[#2a282f]/70 to-transparent" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-[25] opacity-[0.07] mix-blend-overlay"
+        style={{ backgroundImage: GRAIN }}
+      />
+
+      {/* Bar atas */}
+      <header className="topbar absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-4 px-5 py-6 md:px-10 lg:px-16">
+        <div className="flex items-center gap-3 text-sm">
+          <span aria-hidden="true" className="relative flex size-2.5">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#7EE0A1] opacity-60 motion-reduce:animate-none" />
+            <span className="relative inline-flex size-2.5 rounded-full bg-[#7EE0A1]" />
+          </span>
+          <span className="sr-only">{ROLES.join(", ")}. Open for freelance projects.</span>
+          <span aria-hidden="true" className="block h-6 overflow-hidden font-semibold">
+            <span className="ticker-list block">
+              {[...ROLES, ROLES[0]].map((r, i) => (
+                <span key={i} className="block h-6 leading-6">{r}</span>
+              ))}
+            </span>
+          </span>
+        </div>
+
+        <nav aria-label="Utama" className="hidden items-center gap-9 text-sm font-medium text-[#D3DAD9]/75 md:flex">
+          {[
+            ["About", "#about"],
+            ["Works", "#works"],
+            ["Gallery", "#gallery"],
+          ].map(([label, href]) => (
+            <a key={label} href={href} className={`transition-colors hover:text-[#D3DAD9] ${focusRing}`}>
+              {label}
+            </a>
+          ))}
+        </nav>
+
+        <a href="#contact" className={`magnet group flex items-center gap-3 text-sm font-semibold ${focusRing}`}>
+          Let's talk
+          <LongArrow className="w-12 transition-transform duration-300 group-hover:translate-x-1.5 md:w-16" />
+        </a>
+      </header>
+
+      {/* Bar bawah */}
+      <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col items-start justify-between gap-5 px-5 pb-7 md:flex-row md:items-end md:px-10 lg:px-16">
+        <div className="fade-in max-w-xs">
+          <p className="text-base font-bold" style={{ color: ACCENT }}>{TAGLINE}</p>
+          <p className="mt-2 text-sm leading-relaxed text-[#D3DAD9]/75">{TEXT}</p>
+        </div>
+        <div className="fade-in flex flex-wrap gap-3">
+          <a
+            href="#works"
+            className={`magnet rounded-full bg-[#D3DAD9] px-7 py-3.5 text-sm font-semibold text-[#37353E] transition-colors hover:bg-white ${focusRing}`}
+          >
+            View works
+          </a>
+          <a
+            href="#about"
+            className={`magnet rounded-full border border-[#D3DAD9]/35 px-7 py-3.5 text-sm font-semibold backdrop-blur transition-colors hover:border-[#D3DAD9] ${focusRing}`}
+          >
+            About me
+          </a>
+        </div>
+      </div>
     </main>
   );
 }

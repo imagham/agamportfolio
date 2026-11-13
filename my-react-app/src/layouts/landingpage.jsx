@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -9,6 +9,7 @@ import TechStack from "../components/TechStack.jsx";
 import JourneyEducation from "../components/JourneyEducation.jsx";
 import FeaturedProjects from "../components/FeaturedProjects.jsx";
 import CreativeWorks from "../components/CreativeWorks.jsx";
+import Contact from "../components/Contact.jsx";
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 // Di mobile, address bar yang naik-turun tidak perlu memicu refresh (mencegah layout loncat)
@@ -26,7 +27,8 @@ const BG = {
   creative: "#2f2d35", // background CreativeWorks
 };
 
-/* Daftar section untuk navigasi samping. id = id pembungkus di bawah. */
+/* Daftar section untuk navigasi samping. id = id pembungkus di bawah.
+   Urutan harus sama dengan urutan di halaman. */
 const SECTIONS = [
   { id: "s-hero", label: "Beranda" },
   { id: "s-about", label: "Tentang" },
@@ -34,6 +36,7 @@ const SECTIONS = [
   { id: "s-journey", label: "Journey" },
   { id: "s-projects", label: "Proyek" },
   { id: "s-creative", label: "Karya" },
+  { id: "s-contact", label: "Kontak" },
 ];
 
 /* ---------- Transisi A: kata-kata berjalan berlawanan arah, miring mengikuti kecepatan scroll ---------- */
@@ -48,18 +51,22 @@ function WordsTransition({ from, to }) {
         gsap.fromTo(".wt-a", { xPercent: 0 }, { xPercent: -35, ease: "none", scrollTrigger: st });
         gsap.fromTo(".wt-b", { xPercent: -35 }, { xPercent: 0, ease: "none", scrollTrigger: st });
 
-        const skew = gsap.quickTo(".wt-row", "skewX", { duration: 0.4, ease: "power3" });
-        let t;
+        // Satu quickTo per baris: lebih aman daripada quickTo pada selector yang cocok ke banyak elemen
+        const skews = gsap.utils.toArray(".wt-row").map((el) => gsap.quickTo(el, "skewX", { duration: 0.4, ease: "power3" }));
+        const setSkew = (v) => skews.forEach((fn) => fn(v));
+        const reset = gsap.delayedCall(0.12, () => setSkew(0)).pause();
+
         ScrollTrigger.create({
           ...st,
           scrub: undefined,
           onUpdate: (self) => {
-            skew(gsap.utils.clamp(-8, 8, self.getVelocity() / -150));
-            clearTimeout(t);
-            t = setTimeout(() => skew(0), 120);
+            setSkew(gsap.utils.clamp(-8, 8, self.getVelocity() / -150));
+            reset.restart(true);
           },
+          onLeave: () => setSkew(0),
+          onLeaveBack: () => setSkew(0),
         });
-        return () => clearTimeout(t);
+        return () => reset.kill();
       });
     },
     { scope: ref },
@@ -78,14 +85,14 @@ function WordsTransition({ from, to }) {
 
   return (
     <div ref={ref} aria-hidden="true" className="relative flex flex-col justify-center gap-2 overflow-hidden py-16 md:gap-4 md:py-24" style={{ background: `linear-gradient(to bottom, ${from}, ${to})` }}>
-      <div className={`wt-row wt-a flex w-max whitespace-nowrap text-[14vw] font-extrabold leading-none tracking-[-0.04em] text-[#D3DAD9] ${DISPLAY}`}>
+      <div className={`wt-row wt-a flex w-max whitespace-nowrap text-[14vw] font-extrabold leading-none tracking-[-0.04em] text-[#D3DAD9] will-change-transform ${DISPLAY}`}>
         {unit}
         {unit}
         {unit}
         {unit}
       </div>
       <div
-        className={`wt-row wt-b flex w-max whitespace-nowrap text-[14vw] font-extrabold leading-none tracking-[-0.04em] text-transparent ${DISPLAY}`}
+        className={`wt-row wt-b flex w-max whitespace-nowrap text-[14vw] font-extrabold leading-none tracking-[-0.04em] text-transparent will-change-transform ${DISPLAY}`}
         style={{ WebkitTextStroke: "2px rgba(211,218,217,0.55)" }}
       >
         {unit}
@@ -121,7 +128,7 @@ function ShutterTransition({ from, to, label }) {
       {Array.from({ length: BLADES }, (_, i) => (
         <span
           key={i}
-          className={`sh-blade absolute inset-y-0 ${i % 2 ? "origin-top" : "origin-bottom"}`}
+          className={`sh-blade absolute inset-y-0 will-change-transform ${i % 2 ? "origin-top" : "origin-bottom"}`}
           style={{ left: `${(i * 100) / BLADES}%`, width: `${100 / BLADES + 0.2}%`, background: from }}
         />
       ))}
@@ -141,7 +148,7 @@ const HOLES = "repeating-linear-gradient(90deg, rgba(211,218,217,0.75) 0 14px, t
 function Reel({ className = "", dir, frames }) {
   return (
     <div className={`absolute inset-x-[-15%] ${className}`}>
-      <div className={`reel reel-${dir} w-max bg-[#1f1e24] py-2 shadow-[0_20px_40px_-12px_rgba(0,0,0,0.7)]`}>
+      <div className={`reel reel-${dir} w-max bg-[#1f1e24] py-2 shadow-[0_20px_40px_-12px_rgba(0,0,0,0.7)] will-change-transform`}>
         <div className="mb-2 h-2" style={{ background: HOLES }} />
         <div className="flex gap-3 px-3">
           {frames.map(([a, b], i) => (
@@ -181,22 +188,28 @@ function FilmTransition({ from, to }) {
 function SectionNav() {
   const [active, setActive] = useState(SECTIONS[0].id);
 
-  useEffect(() => {
-    // Section dianggap aktif saat melewati garis tengah layar
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => e.isIntersecting && setActive(e.target.id)),
-      { rootMargin: "-50% 0px -50% 0px" },
-    );
-    SECTIONS.forEach((s) => {
-      const el = document.getElementById(s.id);
-      if (el) io.observe(el);
+  /* Section aktif = yang melewati garis tengah layar.
+     Pakai ScrollTrigger (bukan IntersectionObserver) karena Hero bersifat sticky: ia selalu
+     "terlihat", jadi observer tidak pernah memberi tahu saat pengguna kembali ke atas. */
+  useGSAP(() => {
+    SECTIONS.slice(1).forEach((s, i) => {
+      const prev = SECTIONS[i].id;
+      ScrollTrigger.create({
+        trigger: `#${s.id}`,
+        start: "top center",
+        end: "bottom center",
+        onEnter: () => setActive(s.id),
+        onEnterBack: () => setActive(s.id),
+        onLeaveBack: () => setActive(prev),
+      });
     });
-    return () => io.disconnect();
-  }, []);
+  });
 
   const go = (id) => {
-    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    document.getElementById(id)?.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" });
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    // Hero sticky: scrollIntoView tidak bergerak karena ia selalu sudah di atas layar
+    if (id === SECTIONS[0].id) window.scrollTo({ top: 0, behavior });
+    else document.getElementById(id)?.scrollIntoView({ behavior, block: "start" });
   };
 
   return (
@@ -266,6 +279,16 @@ export default function LandingPage() {
         );
       });
 
+      /* Setelah About menutupi Hero sepenuhnya, sembunyikan Hero.
+         Hero sticky tetap ada di belakang sepanjang halaman, jadi tanpa ini link dan tombolnya
+         masih bisa terkena Tab dan dibaca screen reader, dan browser tetap menggambarnya. */
+      ScrollTrigger.create({
+        trigger: aboutWrap.current,
+        start: "top top",
+        onEnter: () => gsap.set(heroWrap.current, { visibility: "hidden" }),
+        onLeaveBack: () => gsap.set(heroWrap.current, { visibility: "visible" }),
+      });
+
       /* Font Bricolage mengubah ukuran teks setelah dimuat. Posisi trigger yang sudah
          dihitung jadi meleset, jadi hitung ulang begitu font dan semua aset siap. */
       const refresh = () => ScrollTrigger.refresh();
@@ -278,7 +301,7 @@ export default function LandingPage() {
 
   return (
     <div ref={page}>
-      <div className="page-progress pointer-events-none fixed left-0 top-0 z-50 h-0.5 w-full bg-[#715A5A]" />
+      <div aria-hidden="true" className="page-progress pointer-events-none fixed left-0 top-0 z-50 h-0.5 w-full bg-[#715A5A]" />
       <SectionNav />
 
       <div id="s-hero" ref={heroWrap} className="origin-top md:sticky md:top-0">
@@ -289,7 +312,7 @@ export default function LandingPage() {
         <About />
       </div>
 
-      {/* Urutan cerita: Aperture -> Tech Stack -> Journey -> Featured Projects -> Creative Works.
+      {/* Urutan cerita: Aperture -> Tech Stack -> Journey -> Featured Projects -> Creative Works -> Contact.
           Pita transisi berdiri sendiri di antara section dan tidak membungkus komponen mana pun.
           Pembungkus ber-id di bawah hanya <div> polos (tanpa transform atau overflow-hidden),
           jadi aman untuk elemen sticky di dalam section.
@@ -310,6 +333,9 @@ export default function LandingPage() {
         <FilmTransition from={BG.projects} to={BG.creative} />
         <div id="s-creative">
           <CreativeWorks />
+        </div>
+        <div id="s-contact">
+          <Contact />
         </div>
       </div>
     </div>
