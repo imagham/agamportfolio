@@ -6,68 +6,58 @@ import { useGSAP } from "@gsap/react";
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 /* Font (tambahkan di CSS global bila belum):
-   @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:ital,wght@0,400;1,400;1,500&display=swap"); */
-const DISPLAY_FONT = "font-['Manrope',system-ui,sans-serif]";
-const SERIF_FONT = "font-['Newsreader',Georgia,serif]";
+   @import url("https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"); */
+const DISPLAY = "font-['Sora',system-ui,sans-serif]";
+const BODY = "font-['Plus_Jakarta_Sans',system-ui,sans-serif]";
 
-/* ============ DATA: ini contoh cerita. Ganti dengan perjalananmu sendiri ============
+/* ============ DATA: cerita perjalanan ============
    kind: "edu" (pendidikan) atau "journey" (perjalanan)
-   year: boleh teks, misalnya "2019" atau "Sekarang"
-   quote: satu kalimat inti tiap bab, tampil miring. */
+   year: boleh teks, misalnya "2019" atau "Sekarang" */
 const CHAPTERS = [
   {
-    year: "2019",
-    kind: "journey",
-    title: "Kamera Pertama",
-    place: "Jakarta",
-    story: "Semua dimulai dari kamera bekas dan jalanan yang saya lewati tiap hari. Saya belum paham pencahayaan, tapi saya mulai memperhatikan cara cahaya jatuh di wajah orang dan dinding kota.",
-    quote: "Saya belajar melihat dulu, baru belajar memotret.",
-    tags: ["Fotografi", "Street"],
+    year: "2014",
+    kind: "edu",
+    title: "Langkah Pertama",
+    place: "MIN 5 Tangerang",
+    story: "Setiap perjalanan dimulai dari suatu tempat, dan perjalanan saya dimulai di MIN 5 Tangerang. Di sinilah saya mengambil langkah pertama di pendidikan formal, membangun fondasi pengetahuan, dan mulai mengenal pentingnya belajar.",
+    quote: "Semua berawal dari satu langkah kecil.",
+    tags: ["Pendidikan dasar", "Fondasi belajar"],
   },
   {
     year: "2020",
     kind: "edu",
-    title: "Bangku Sekolah",
-    place: "Nama sekolahmu, Kota",
-    story: "Di sini saya pertama kali menulis baris kode dan merasakan kepuasan melihat halaman web sederhana tampil di layar. Di luar kelas, saya aktif di kegiatan fotografi sekolah.",
-    quote: "Layar kosong ternyata bisa jadi kanvas.",
-    tags: ["Dasar komputer", "HTML & CSS", "Ekstrakurikuler foto"],
+    title: "Mendalami Ilmu",
+    place: "Ma'had Adz-Dzahabi",
+    story: "Perjalanan saya mengambil arah yang lebih dalam. Di sini saya mulai menjelajahi ilmu agama: Tauhid, Fikih, Bahasa Arab, dan cabang ilmu Islam lainnya. Pengalaman ini membentuk cara saya memahami hidup dan mengajarkan nilai ilmu, disiplin, dan pertumbuhan diri.",
+    quote: "Ilmu membentuk cara saya memandang hidup.",
+    tags: ["Tauhid", "Fikih", "Bahasa Arab", "Disiplin"],
   },
   {
-    year: "2021",
-    kind: "journey",
-    title: "Kursi Barber",
-    place: "Barbershop pertama",
-    story: "Saya belajar memegang clipper dan gunting dari nol. Pelajaran terbesarnya bukan teknik, tapi mendengarkan klien dan memastikan mereka pulang dengan percaya diri.",
-    quote: "Detail kecil yang rapi membuat orang merasa dihargai.",
-    tags: ["Barbering", "Klien pertama"],
-  },
-  {
-    year: "2022",
+    year: "2023",
     kind: "edu",
-    title: "Bangku Kuliah",
-    place: "Nama kampus, Jurusanmu",
-    story: "Algoritma, basis data, dan rekayasa web menjadi fondasi baru. Saya mulai membangun proyek kecil di luar tugas, sebagian besar karena penasaran bagaimana sebuah situs bisa terasa hidup.",
-    quote: "Teori memberi nama pada hal-hal yang sudah saya kerjakan.",
-    tags: ["Algoritma", "Basis data", "Pengembangan web"],
+    title: "Menemukan Teknologi",
+    place: "Pondok Tahfizh Plus Abudzar",
+    story: "Di sini saya menemukan sisi lain dari minat saya: teknologi dan kreativitas. Saya mulai mengenal dunia Teknologi Informasi lewat dasar-dasar pengembangan web seperti HTML, CSS, dan pemrograman. Selangkah demi selangkah, rasa penasaran itu tumbuh menjadi gairah untuk membangun pengalaman digital.",
+    quote: "Rasa penasaran tumbuh menjadi keinginan untuk membangun.",
+    tags: ["HTML", "CSS", "Pemrograman"],
   },
   {
-    year: "2024",
+    year: "2023",
     kind: "journey",
-    title: "Proyek Pertama",
-    place: "Freelance",
-    story: "Klien pertama meminta situs untuk usahanya. Saya belajar membaca kebutuhan, menetapkan tenggat, dan menjaga hasil akhir tetap sederhana supaya benar-benar dipakai.",
-    quote: "Desain yang baik terasa mudah, dan itu butuh kerja keras.",
-    tags: ["React", "Tailwind CSS", "Freelance"],
+    title: "Kreativitas di Ujung Tangan",
+    place: "Pondok Tahfizh Plus Abudzar",
+    story: "Selain teknologi, Abudzar juga menjadi tempat saya pertama kali mengasah keterampilan barbering. Dari sini saya belajar bahwa kreativitas tidak terbatas pada layar atau baris kode, tetapi juga bisa diwujudkan lewat keterampilan tangan dan pekerjaan yang bermakna.",
+    quote: "Kreativitas tidak hanya hidup di layar.",
+    tags: ["Barbering", "Keterampilan tangan"],
   },
   {
     year: "Sekarang",
     kind: "journey",
-    title: "Menyatukan Semuanya",
-    place: "Jakarta",
-    story: "Kode, kamera, dan clipper ternyata punya kesamaan: ketelitian dan rasa. Saya terus belajar, mengerjakan proyek baru, dan terbuka untuk kolaborasi.",
+    title: "Perjalanan Masih Berlanjut",
+    place: "Siswa kelas 3 SMA",
+    story: "Hari ini, sebagai siswa kelas tiga SMA, saya terus menjelajah, belajar, dan mengembangkan diri di berbagai bidang. Perjalanan saya masih terus berjalan, digerakkan oleh rasa ingin tahu, kecintaan pada ilmu, dan keinginan untuk terus bertumbuh.",
     quote: "Bab berikutnya belum ditulis.",
-    tags: ["Kode", "Kamera", "Klipper"],
+    tags: ["Web", "Barbering", "Terus belajar"],
   },
 ];
 
@@ -77,13 +67,10 @@ const FILTERS = [
   { id: "journey", label: "Perjalanan" },
 ];
 const KIND_LABEL = { edu: "Pendidikan", journey: "Perjalanan" };
-
-const Chars = ({ text, cls }) =>
-  text.split("").map((ch, i) => (
-    <span key={i} className={`${cls} inline-block`}>
-      {ch === " " ? "\u00A0" : ch}
-    </span>
-  ));
+const GLOW = { edu: "rgba(113,90,90,0.5)", journey: "rgba(211,218,217,0.14)" };
+const TOP = 96; // jarak kartu menempel dari atas layar (px)
+const PEEK = 16; // tinggi tepi kartu yang mengintip saat menumpuk (px)
+const pad = (n) => String(n).padStart(2, "0");
 
 export default function JourneyEducation() {
   const root = useRef(null);
@@ -92,40 +79,23 @@ export default function JourneyEducation() {
 
   useGSAP(
     () => {
-      const q = (s) => root.current.querySelector(s);
-      const items = gsap.utils.toArray(".jn-item");
-      const yearEl = q(".jn-year");
-      const countEl = q(".jn-count");
-      const calm = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      /* Bab yang sedang dibaca: tahun di panel kiri berganti, bab lain meredup (tanpa re-render) */
-      let current = -1;
-      const setActive = (i) => {
-        if (i === current) return;
-        current = i;
-        items.forEach((el, k) => (el.dataset.active = String(k === i)));
-        yearEl.textContent = list[i].year;
-        countEl.textContent = i + 1;
-        if (!calm()) gsap.fromTo(yearEl, { yPercent: 30, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.5, ease: "power3.out", overwrite: true });
-      };
-      setActive(0);
-      items.forEach((el, i) => {
-        ScrollTrigger.create({ trigger: el, start: "top 60%", end: "bottom 60%", onToggle: (self) => self.isActive && setActive(i) });
-      });
-
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        gsap.from(".jn-title-char", { yPercent: 115, rotate: 10, transformOrigin: "0% 100%", duration: 1.1, stagger: 0.04, ease: "power4.out", scrollTrigger: { trigger: ".jn-head", start: "top 80%", once: true } });
-        gsap.from(".jn-intro", { y: 20, opacity: 0, duration: 0.8, delay: 0.3, ease: "power3.out", scrollTrigger: { trigger: ".jn-head", start: "top 80%", once: true } });
+        const st = { trigger: ".jn-head", start: "top 82%", once: true };
+        gsap.from(".jn-line", { yPercent: 115, duration: 1.1, stagger: 0.12, ease: "power4.out", scrollTrigger: st });
+        gsap.from(".jn-fade", { y: 20, opacity: 0, duration: 0.8, stagger: 0.1, delay: 0.3, ease: "power3.out", scrollTrigger: st });
 
-        // Garis perjalanan terisi mengikuti scroll
-        gsap.fromTo(".jn-fill", { scaleY: 0 }, { scaleY: 1, ease: "none", scrollTrigger: { trigger: ".jn-list", start: "top 60%", end: "bottom 60%", scrub: true } });
+        const cards = gsap.utils.toArray(".jn-card");
+        cards.forEach((el, i) => {
+          // Kartu masuk dari bawah
+          gsap.from(el, { y: 60, opacity: 0, duration: 0.9, ease: "power3.out", clearProps: "transform,opacity", scrollTrigger: { trigger: el, start: "top 90%", once: true } });
 
-        // Tiap bab masuk pelan, titiknya muncul lebih dulu
-        items.forEach((el) => {
-          const st = { trigger: el, start: "top 85%", once: true };
-          gsap.from(el.querySelector(".jn-dot"), { scale: 0, duration: 0.5, ease: "back.out(2.5)", scrollTrigger: st });
-          gsap.from(el.querySelector(".jn-card"), { y: 40, opacity: 0, duration: 0.8, ease: "power3.out", scrollTrigger: st });
+          // Saat kartu berikutnya naik menimpa, kartu ini mengecil dan meredup
+          const next = cards[i + 1];
+          if (!next) return;
+          const tl = { trigger: next, start: "top 92%", end: `top ${TOP + (i + 1) * PEEK}px`, scrub: true };
+          gsap.to(el.querySelector(".jn-inner"), { scale: 0.94, ease: "none", scrollTrigger: tl });
+          gsap.to(el.querySelector(".jn-shade"), { opacity: 0.6, ease: "none", scrollTrigger: tl });
         });
       });
     },
@@ -133,22 +103,24 @@ export default function JourneyEducation() {
   );
 
   return (
-    <section id="journey" ref={root} className="relative overflow-clip bg-[#37353E] px-6 py-20 text-[#D3DAD9] md:px-12 md:py-28 lg:px-20">
-      <div className="pointer-events-none absolute -right-40 top-1/3 h-112 w-md rounded-full bg-[#715A5A]/20 blur-[120px]" />
+    <section id="journey" ref={root} className={`relative overflow-clip bg-[#2f2d35] px-6 py-20 text-[#D3DAD9] md:px-12 md:py-28 lg:px-20 ${BODY}`}>
+      <div className="pointer-events-none absolute -right-40 top-1/4 h-112 w-md rounded-full bg-[#715A5A]/20 blur-[120px]" />
+      <div className="pointer-events-none absolute -left-40 bottom-1/4 h-112 w-md rounded-full bg-[#D3DAD9]/5 blur-[120px]" />
 
-      <div className="relative mx-auto grid max-w-7xl gap-12 md:grid-cols-12 md:gap-16">
-        {/* Kiri: judul, filter, dan tahun bab yang sedang dibaca (menempel di desktop) */}
-        <div className="jn-head md:col-span-5 md:sticky md:top-24 md:self-start">
-          <h2 className={`${DISPLAY_FONT} text-5xl font-extrabold leading-[1] tracking-[-0.03em] md:text-6xl xl:text-7xl`}>
-            {["Journey", "& Education"].map((line) => (
-              <span key={line} className="block overflow-hidden pb-2">
-                <Chars text={line} cls="jn-title-char" />
-              </span>
-            ))}
-          </h2>
-          <p className={`jn-intro ${SERIF_FONT} mt-4 max-w-sm text-2xl italic leading-snug text-[#D3DAD9]/85 md:text-3xl`}>Perjalanan dari balik lensa, kursi barber, sampai editor kode.</p>
+      <div className="relative mx-auto max-w-6xl">
+        <header className="jn-head mb-14 flex flex-col gap-8 md:mb-20 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className={`${DISPLAY} text-5xl font-extrabold leading-[1] tracking-[-0.04em] md:text-7xl`}>
+              {["Journey", "& Education"].map((line) => (
+                <span key={line} className="block overflow-hidden pb-2">
+                  <span className="jn-line block">{line}</span>
+                </span>
+              ))}
+            </h2>
+            <p className="jn-fade mt-5 max-w-md text-lg leading-relaxed text-[#D3DAD9]/70">Perjalanan dari bangku madrasah dan pondok, sampai editor kode dan kursi barber.</p>
+          </div>
 
-          <div className="mt-8 flex flex-wrap gap-2" role="group" aria-label="Filter cerita">
+          <div className="jn-fade flex flex-wrap gap-2" role="group" aria-label="Filter cerita">
             {FILTERS.map((f) => {
               const n = f.id === "all" ? CHAPTERS.length : CHAPTERS.filter((c) => c.kind === f.id).length;
               const on = filter === f.id;
@@ -158,56 +130,50 @@ export default function JourneyEducation() {
                   type="button"
                   aria-pressed={on}
                   onClick={() => setFilter(f.id)}
-                  className={`rounded-full border px-5 py-2 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D3DAD9] ${on ? "border-[#D3DAD9] bg-[#D3DAD9] text-[#37353E]" : "border-[#D3DAD9]/30 hover:bg-[#715A5A]"}`}
+                  className={`rounded-full border px-5 py-2.5 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D3DAD9] ${on ? "border-[#D3DAD9] bg-[#D3DAD9] text-[#37353E]" : "border-[#D3DAD9]/25 text-[#D3DAD9]/80 hover:border-[#D3DAD9]/60"}`}
                 >
                   {f.label} <span className="tabular-nums opacity-60">{n}</span>
                 </button>
               );
             })}
           </div>
+        </header>
 
-          {/* Tahun besar di dalam sudut bidik viewfinder */}
-          <div aria-hidden="true" className="relative mt-10 hidden p-8 md:block">
-            <span className="absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-[#D3DAD9]/50" />
-            <span className="absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-[#D3DAD9]/50" />
-            <span className="absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[#D3DAD9]/50" />
-            <span className="absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[#D3DAD9]/50" />
-            <p className={`jn-year ${DISPLAY_FONT} text-6xl font-extrabold leading-none tracking-[-0.03em] lg:text-7xl`}>{list[0].year}</p>
-            <p className="mt-3 text-sm text-[#D3DAD9]/60">
-              Bab <span className="jn-count tabular-nums">1</span> dari {list.length}
-            </p>
-          </div>
-        </div>
+        {/* Kartu menumpuk saat di-scroll */}
+        <ol className="relative flex flex-col gap-10 md:gap-[20vh]">
+          {list.map((c, i) => (
+            <li key={c.title} className="jn-card sticky" style={{ top: TOP + i * PEEK }}>
+              <article className="jn-inner relative origin-top overflow-hidden rounded-[32px] border border-[#D3DAD9]/15 bg-[linear-gradient(135deg,#4a4a55,#37353E)] p-7 shadow-2xl shadow-black/40 md:p-12">
+                <span aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 size-72 rounded-full blur-3xl" style={{ background: GLOW[c.kind] }} />
+                <span className="absolute right-7 top-7 text-sm tabular-nums text-[#D3DAD9]/50 md:right-12 md:top-10">
+                  {pad(i + 1)} / {pad(list.length)}
+                </span>
 
-        {/* Kanan: bab-bab cerita di sepanjang garis perjalanan */}
-        <ol className="jn-list relative md:col-span-7">
-          <div aria-hidden="true" className="absolute bottom-0 left-[7px] top-0 w-[2px] bg-[#D3DAD9]/15">
-            <div className="jn-fill h-full origin-top bg-[#D3DAD9]" />
-          </div>
+                <div className="relative grid gap-8 md:grid-cols-12 md:gap-10">
+                  <div className="md:col-span-5">
+                    <p className={`${DISPLAY} font-extrabold leading-none tracking-[-0.04em] bg-[linear-gradient(180deg,#D3DAD9,rgba(211,218,217,0.15))] bg-clip-text text-transparent ${c.year.length > 4 ? "text-5xl md:text-6xl" : "text-7xl md:text-[104px]"}`}>{c.year}</p>
+                    <p className="mt-5 flex items-center gap-3 text-[#D3DAD9]/80">
+                      <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-[#715A5A] ring-4 ring-[#715A5A]/30" />
+                      {c.place}
+                    </p>
+                    <span className={`mt-4 inline-block rounded-full px-3.5 py-1 text-xs font-semibold ${c.kind === "edu" ? "bg-[#D3DAD9] text-[#37353E]" : "border border-[#D3DAD9]/40"}`}>{KIND_LABEL[c.kind]}</span>
+                  </div>
 
-          {list.map((c, ) => (
-            <li key={c.title} data-active="false" className="jn-item group relative pb-12 pl-8 opacity-60 transition-opacity duration-500 last:pb-0 data-[active=true]:opacity-100 md:pb-20 md:pl-12">
-              <span aria-hidden="true" className="jn-dot absolute left-0 top-1.5 size-4 rounded-full border-2 border-[#D3DAD9] bg-[#37353E] transition-colors duration-300 group-data-[active=true]:bg-[#D3DAD9]" />
-
-              <article className="jn-card">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${c.kind === "edu" ? "bg-[#D3DAD9] text-[#37353E]" : "border border-[#D3DAD9]/40"}`}>{KIND_LABEL[c.kind]}</span>
-                  <span className={`${SERIF_FONT} text-xl italic text-[#D3DAD9]/75`}>
-                    {c.year}, {c.place}
-                  </span>
+                  <div className="md:col-span-7">
+                    <h3 className={`${DISPLAY} text-3xl font-extrabold leading-[1.1] tracking-[-0.03em] md:text-4xl`}>{c.title}</h3>
+                    <p className="mt-4 max-w-prose text-base leading-relaxed text-[#D3DAD9]/75 md:text-lg">{c.story}</p>
+                    <p className={`${DISPLAY} mt-6 rounded-2xl bg-[#D3DAD9]/[0.06] p-5 text-lg font-light leading-snug md:text-xl`}>{c.quote}</p>
+                    <ul className="mt-6 flex flex-wrap gap-2">
+                      {c.tags.map((t) => (
+                        <li key={t} className="rounded-full border border-[#D3DAD9]/20 px-3.5 py-1 text-sm text-[#D3DAD9]/85">
+                          {t}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
 
-                <h3 className={`${DISPLAY_FONT} mt-4 text-3xl font-extrabold leading-[1.1] tracking-[-0.02em] md:text-4xl`}>{c.title}</h3>
-                <p className="mt-4 max-w-prose text-lg leading-relaxed text-[#D3DAD9]/80">{c.story}</p>
-                <p className={`${SERIF_FONT} mt-5 max-w-prose border-l-2 border-[#715A5A] pl-4 text-2xl italic leading-snug text-[#D3DAD9]`}>{c.quote}</p>
-
-                <ul className="mt-5 flex flex-wrap gap-2">
-                  {c.tags.map((t) => (
-                    <li key={t} className="rounded-full bg-[#715A5A]/35 px-3 py-1 text-sm text-[#D3DAD9]/90">
-                      {t}
-                    </li>
-                  ))}
-                </ul>
+                <span aria-hidden="true" className="jn-shade pointer-events-none absolute inset-0 rounded-[32px] bg-[#2a2830] opacity-0" />
               </article>
             </li>
           ))}

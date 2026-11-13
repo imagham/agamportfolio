@@ -6,32 +6,26 @@ gsap.registerPlugin(useGSAP);
 
 /*
   Font (tambahkan sekali di index.html / CSS global):
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,500;12..96,800&display=swap" rel="stylesheet">
-*/
-const DISPLAY = "font-['Bricolage_Grotesque',system-ui,sans-serif]";
-const TEXT =
-  "A Software Engineer, Barber, and Photographer driven by curiosity and the passion to create meaningful things.";
-const BLADES = [0, 60, 120, 180, 240, 300];
-const GLYPHS = "01<>/{}[]*#=+";
-const WORD = `intro-word absolute opacity-0 ${DISPLAY} text-6xl font-extrabold leading-none tracking-[-0.03em] md:text-8xl lg:text-9xl`;
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-// Efek "decode": huruf teracak lalu terkunci satu per satu dari kiri
-function scramble(el, text, duration = 1.1) {
-  const o = { p: 0 };
-  return gsap.to(o, {
-    p: 1,
-    duration,
-    ease: "none",
-    onUpdate: () => {
-      const n = Math.floor(o.p * text.length);
-      const rest = Array.from(text.slice(n), (c) =>
-        c === " " ? " " : GLYPHS[(Math.random() * GLYPHS.length) | 0],
-      ).join("");
-      el.textContent = text.slice(0, n) + rest;
-    },
-    onComplete: () => (el.textContent = text),
-  });
-}
+  KONSEP: layar tertutup "rambut" (ribuan helai di canvas). Mesin clipper menyapu dua kali dan
+  mencukur area judul, lalu kursormu berubah jadi bingkai fokus kamera: gerakkan untuk mencukur,
+  klik untuk memotret (flash). Barber + Photographer + Engineer dalam satu interaksi.
+*/
+const DISPLAY = "font-['Unbounded',system-ui,sans-serif]";
+const BODY = "font-['Plus_Jakarta_Sans',system-ui,sans-serif]";
+const TEXT = "A Software Engineer, Barber, and Photographer driven by curiosity and the passion to create meaningful things.";
+const ROLES = ["Engineer", "Barber", "Photographer"];
+
+const COL = 5; // lebar satu helai (px)
+const ROW = 18; // tinggi satu baris helai (px)
+const SHADES = ["#25232a", "#2b2830", "#312e37"];
+const USER_R = 64; // radius cukur kursor (px)
+const REGROW = 14; // detik sampai rambut tumbuh penuh lagi
+const smooth = (a, b, x) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
 
 export default function Hero() {
   const heroRef = useRef(null);
@@ -41,85 +35,128 @@ export default function Hero() {
       const mm = gsap.matchMedia();
       const root = heroRef.current;
 
-      // Tanpa animasi: sembunyikan intro, langsung tampil
       mm.add("(prefers-reduced-motion: reduce)", () => {
-        gsap.set(".intro", { display: "none" });
+        gsap.set(".hair, .cursor, .hint, .flash", { display: "none" });
       });
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        /* ---------- 1. HERO (dimainkan saat iris terbuka) ---------- */
-        const hero = gsap.timeline({
-          paused: true,
-          defaults: { ease: "power3.out" },
-        });
-        const techEl = root.querySelector(".scramble");
+        const canvas = root.querySelector(".hair");
+        const ctx = canvas.getContext("2d");
+        const cursor = root.querySelector(".cursor");
+        let W, H, cols, rows, h, shade, lock;
+        let dirty = true;
+        let live = false;
+        let last = null;
 
-        hero
-          .from(".hero-glow", {
-            opacity: 0,
-            scale: 0.5,
-            duration: 1,
-            stagger: 0.2,
-          })
-          .fromTo(
-            ".navbar",
-            { scaleX: 0, opacity: 0, transformOrigin: "50% 50%" },
-            {
-              scaleX: 1,
-              opacity: 1,
-              duration: 1.2,
-              ease: "elastic.out(1, 0.55)",
-            },
-            0.1,
-          )
-          .from(
-            ".nav-item",
-            {
-              y: -15,
-              opacity: 0,
-              duration: 0.5,
-              stagger: 0.1,
-              clearProps: "transform,opacity",
-            },
-            0.4,
-          )
-          .from(
-            ".hero-heading-line",
-            {
-              yPercent: 120,
-              opacity: 0,
-              rotateX: -15,
-              duration: 1.2,
-              stagger: 0.2,
-              ease: "power4.out",
-            },
-            0.5,
-          )
-          .add(scramble(techEl, "Technology"), 0.7)
-          .from(
-            ".word",
-            {
-              yPercent: 120,
-              skewY: 8,
-              rotate: 4,
-              opacity: 0,
-              duration: 1.1,
-              stagger: 0.045,
-            },
-            1.1,
-          )
-          .from(
-            ".hero-button",
-            {
-              scale: 0,
-              opacity: 0,
-              duration: 1.2,
-              ease: "elastic.out(1, 0.5)",
-            },
-            1.7,
-          );
+        /* ---------- 1. Ladang rambut: satu helai = satu sel di grid ---------- */
+        const build = () => {
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          W = root.clientWidth;
+          H = root.clientHeight;
+          canvas.width = W * dpr;
+          canvas.height = H * dpr;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          cols = Math.ceil(W / COL);
+          rows = Math.ceil(H / ROW);
+          h = new Float32Array(cols * rows).fill(1);
+          lock = new Uint8Array(cols * rows);
+          shade = new Uint8Array(cols * rows).map(() => (Math.random() * 3) | 0);
+          dirty = true;
+        };
 
-        /* ---------- 2. INTRO: Engineer, Barber, Photographer ---------- */
+        const shave = (x, y, R) => {
+          const c0 = Math.max(0, ((x - R) / COL) | 0);
+          const c1 = Math.min(cols - 1, ((x + R) / COL) | 0);
+          const r0 = Math.max(0, ((y - R) / ROW) | 0);
+          const r1 = Math.min(rows - 1, ((y + R) / ROW) | 0);
+          for (let r = r0; r <= r1; r++) {
+            for (let c = c0; c <= c1; c++) {
+              const d = Math.hypot(c * COL + COL / 2 - x, r * ROW + ROW / 2 - y);
+              const f = smooth(R * 0.5, R, d); // tepi lembut = efek fade
+              const k = r * cols + c;
+              if (f < h[k]) {
+                h[k] = f;
+                dirty = true;
+              }
+            }
+          }
+        };
+
+        // Isi celah saat kursor bergerak cepat
+        const move = (x, y, R) => {
+          if (last) {
+            const dx = x - last.x;
+            const dy = y - last.y;
+            const n = Math.ceil(Math.hypot(dx, dy) / (R * 0.35));
+            for (let i = 1; i <= n; i++) shave(last.x + (dx * i) / n, last.y + (dy * i) / n, R);
+          } else shave(x, y, R);
+          last = { x, y };
+        };
+
+        const draw = () => {
+          ctx.clearRect(0, 0, W, H);
+          for (let s = 0; s < 3; s++) {
+            ctx.fillStyle = SHADES[s];
+            ctx.beginPath();
+            for (let r = 0; r < rows; r++) {
+              for (let c = 0; c < cols; c++) {
+                const k = r * cols + c;
+                if (shade[k] !== s || h[k] < 0.02) continue;
+                ctx.rect(c * COL - 0.25, r * ROW - 0.25, COL + 0.5, h[k] * ROW + (h[k] > 0.98 ? 0.5 : 0));
+              }
+            }
+            ctx.fill();
+          }
+        };
+
+        // Rambut tumbuh lagi pelan, kecuali area judul yang sudah dikunci
+        const tick = (_, dt) => {
+          const g = dt / 1000 / REGROW;
+          for (let k = 0; k < h.length; k++) {
+            if (!lock[k] && h[k] < 1) {
+              h[k] = Math.min(1, h[k] + g);
+              dirty = true;
+            }
+          }
+          if (dirty) {
+            draw();
+            dirty = false;
+          }
+        };
+
+        const headRect = () => {
+          const rr = root.getBoundingClientRect();
+          const hl = root.querySelector(".headline").getBoundingClientRect();
+          return { L: hl.left - rr.left, T: hl.top - rr.top, R: hl.right - rr.left, B: hl.bottom - rr.top, ox: rr.left, oy: rr.top };
+        };
+
+        // Kunci sel di area judul yang sudah bersih supaya teks tetap terbaca
+        const lockHeadline = (all) => {
+          const { L, T, R, B } = headRect();
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              const x = c * COL + COL / 2;
+              const y = r * ROW + ROW / 2;
+              const k = r * cols + c;
+              if (x > L - 8 && x < R + 8 && y > T - 8 && y < B + 8 && (all || h[k] < 0.35)) {
+                h[k] = 0;
+                lock[k] = 1;
+              }
+            }
+          }
+          dirty = true;
+        };
+
+        build();
+        gsap.ticker.add(tick);
+
+        /* ---------- 2. UI masuk setelah sapuan pertama ---------- */
+        gsap.set(cursor, { xPercent: -50, yPercent: -50, opacity: 0 });
+        const hero = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
+        hero.from(".ui-in", { y: 24, opacity: 0, duration: 0.8, stagger: 0.1, clearProps: "transform,opacity" });
+        gsap.from(".navbar", { y: -30, opacity: 0, duration: 0.9, delay: 0.2, ease: "power3.out" });
+
+        /* ---------- 3. Sapuan clipper otomatis: dua jalur melewati judul ---------- */
         let seen = false;
         try {
           seen = sessionStorage.getItem("intro-seen") === "1";
@@ -128,380 +165,143 @@ export default function Hero() {
           /* storage tidak tersedia, abaikan */
         }
 
-        const unlock = () => (document.body.style.overflow = "");
-        const barberText = root.querySelector(".w-bar span");
-        const stripe = { o: 0 };
-        barberText.style.backgroundImage =
-          "repeating-linear-gradient(45deg, #D3DAD9 0 8px, #715A5A 8px 16px)";
-        barberText.style.backgroundSize = "32px 32px";
-        const paint = () => {
-          barberText.style.backgroundPositionX = `${stripe.o}px`;
-        };
-        let skipBtn, onSkip;
-        if (seen) {
-          gsap.set(".intro", { display: "none" });
-
-          // Background turun dari atas (animasi lama)
-          gsap.fromTo(
-            ".hero-bg",
-            { clipPath: "inset(0% 0% 100% 0% round 0% 0% 20% 20%)" },
-            {
-              clipPath: "inset(0% 0% 0% 0% round 0% 0% 20% 20%)",
-              duration: 1.3,
-              ease: "power4.inOut",
-            },
-          );
-
-          hero.delay(0.6).play(); // teks dan navbar masuk setelah background mulai turun
-        } else {
-          const intro = gsap.timeline({
-            defaults: { ease: "power3.out" },
-            onComplete: () => {
-              gsap.set(".intro", { display: "none" });
-              unlock();
-            },
-          });
-
-          intro
-            .fromTo(
-              ".intro-pre",
-              { opacity: 0, y: 10 },
-              { opacity: 1, y: 0, duration: 0.5 },
-              0.1,
-            )
-            // 1. Engineer: diketik
-            .set(".w-eng", { opacity: 1 }, 0.3)
-            .fromTo(
-              ".w-eng .ch",
-              { opacity: 0 },
-              { opacity: 1, duration: 0.01, stagger: 0.07, ease: "none" },
-              0.3,
-            )
-            .to(
-              ".intro-caret",
-              {
-                opacity: 0,
-                duration: 0.12,
-                repeat: 3,
-                yoyo: true,
-                ease: "none",
-              },
-              1.0,
-            )
-            .to(
-              ".w-eng",
-              { yPercent: -60, opacity: 0, duration: 0.35, ease: "power2.in" },
-              1.6,
-            )
-            // 2. Barber: pita striped berputar seperti barber pole
-            .fromTo(
-              ".w-bar",
-              { opacity: 0, yPercent: 60 },
-              { opacity: 1, yPercent: 0, duration: 0.5 },
-              1.75,
-            )
-            .to(
-              stripe,
-              {
-                o: 28,
-                duration: 0.55,
-                ease: "none",
-                repeat: 1,
-                onUpdate: paint,
-              },
-              1.75,
-            )
-            .to(
-              ".w-bar",
-              { yPercent: -60, opacity: 0, duration: 0.35, ease: "power2.in" },
-              2.9,
-            )
-            // 3. Photographer: fokus menajam, lalu shutter klik
-            .fromTo(
-              ".w-pho",
-              { opacity: 0, filter: "blur(26px)" },
-              {
-                opacity: 1,
-                filter: "blur(0px)",
-                duration: 0.7,
-                ease: "power2.out",
-              },
-              3.05,
-            )
-            .fromTo(
-              ".intro-flash",
-              { opacity: 0.9 },
-              { opacity: 0, duration: 0.5 },
-              3.85,
-            )
-            .to(
-              [".w-pho", ".intro-pre"],
-              { opacity: 0, scale: 1.08, duration: 0.35, ease: "power2.in" },
-              3.95,
-            )
-            // Iris membuka, hero muncul di baliknya
-            .addLabel("open", 4.1)
-            .to(
-              ".ap-blade",
-              { y: 0, duration: 1.3, ease: "power3.inOut" },
-              "open",
-            )
-            .to(
-              ".ap-iris",
-              { rotate: 70, duration: 1.3, ease: "power3.inOut" },
-              "open",
-            )
-            .add(() => hero.play(), "open+=0.55");
-
-          skipBtn = root.querySelector(".intro-skip");
-          onSkip = () => intro.timeScale(6);
-          skipBtn.addEventListener("click", onSkip);
-        }
-
-        /* ---------- 3. LOOP ---------- */
-        gsap.fromTo(
-          ".shine",
-          { xPercent: -150 },
-          {
-            xPercent: 350,
-            duration: 1.1,
-            ease: "power2.inOut",
-            repeat: -1,
-            repeatDelay: 2.5,
-            delay: 7,
+        const { L, T, R: right, B, ox, oy } = headRect();
+        const lh = (B - T) / 2;
+        const R = lh * 1.1;
+        const p = { x: L - R, y: T + lh * 0.5 };
+        const sweep = gsap.timeline({
+          onUpdate: () => {
+            move(p.x, p.y, R);
+            gsap.set(cursor, { x: p.x + ox, y: p.y + oy, width: R * 2, height: R * 2, opacity: 1 });
           },
-        );
-        gsap.to(".hero-glow-1", {
-          x: -40,
-          y: 30,
-          duration: 6,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
+          onComplete: () => {
+            lockHeadline(false);
+            last = null;
+            live = true;
+            gsap.to(cursor, { opacity: 0, width: USER_R * 2, height: USER_R * 2, duration: 0.4 });
+          },
         });
-        gsap.to(".hero-glow-2", {
-          x: 40,
-          y: -30,
-          duration: 7,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
-        });
+        sweep
+          .to(p, { x: right + R, duration: 1.5, ease: "power2.inOut" })
+          .to(p, { y: T + lh * 1.5, duration: 0.35, ease: "power2.inOut" })
+          .to(p, { x: L - R, duration: 1.5, ease: "power2.inOut" })
+          .add(() => hero.play(), 1.6);
+        if (seen) sweep.timeScale(6);
 
-        /* ---------- 4. PARALLAX MOUSE ---------- */
-        const layers = gsap.utils.toArray(".parallax").map((el) => ({
-          depth: Number(el.dataset.depth || 20),
-          x: gsap.quickTo(el, "x", { duration: 0.8, ease: "power3.out" }),
-          y: gsap.quickTo(el, "y", { duration: 0.8, ease: "power3.out" }),
-        }));
+        /* ---------- 4. Kursor = bingkai fokus kamera yang mencukur ---------- */
+        const cx = gsap.quickTo(cursor, "x", { duration: 0.25, ease: "power3.out" });
+        const cy = gsap.quickTo(cursor, "y", { duration: 0.25, ease: "power3.out" });
+        let hinted = false;
+
         const onMove = (e) => {
-          const nx = e.clientX / window.innerWidth - 0.5;
-          const ny = e.clientY / window.innerHeight - 0.5;
-          layers.forEach((l) => {
-            l.x(nx * l.depth);
-            l.y(ny * l.depth);
-          });
+          if (!live) return;
+          const rr = root.getBoundingClientRect();
+          const x = e.clientX - rr.left;
+          const y = e.clientY - rr.top;
+          if (y < 0 || y > rr.height) {
+            last = null;
+            gsap.to(cursor, { opacity: 0, duration: 0.2 });
+            return;
+          }
+          move(x, y, USER_R);
+          cx(e.clientX);
+          cy(e.clientY);
+          gsap.to(cursor, { opacity: 1, duration: 0.2, overwrite: "auto" });
+          if (!hinted) {
+            hinted = true;
+            gsap.to(".hint", { opacity: 0, duration: 0.6 });
+          }
         };
-        window.addEventListener("mousemove", onMove);
 
-        /* ---------- 5. TOMBOL MAGNETIK ---------- */
-        const magnets = gsap.utils.toArray(".magnet").map((el) => {
-          const label = el.querySelector(".label");
-          const xTo = gsap.quickTo(el, "x", {
-            duration: 0.6,
-            ease: "elastic.out(1, 0.4)",
-          });
-          const yTo = gsap.quickTo(el, "y", {
-            duration: 0.6,
-            ease: "elastic.out(1, 0.4)",
-          });
-          const lblX = label
-            ? gsap.quickTo(label, "x", { duration: 0.6, ease: "power3" })
-            : null;
-          const lblY = label
-            ? gsap.quickTo(label, "y", { duration: 0.6, ease: "power3" })
-            : null;
+        // Klik = potret: flash, bingkai menciut, cukuran lebih lebar
+        const onDown = (e) => {
+          if (!live || e.target.closest("a, button")) return;
+          const rr = root.getBoundingClientRect();
+          shave(e.clientX - rr.left, e.clientY - rr.top, USER_R * 2.2);
+          gsap.fromTo(".flash", { opacity: 0.35 }, { opacity: 0, duration: 0.45, ease: "power2.out" });
+          gsap.fromTo(cursor, { scale: 0.8 }, { scale: 1, duration: 0.5, ease: "back.out(3)" });
+        };
+        const onLeave = () => {
+          last = null;
+          gsap.to(cursor, { opacity: 0, duration: 0.2 });
+        };
 
-          const move = (e) => {
-            const r = el.getBoundingClientRect();
-            const dx = e.clientX - (r.left + r.width / 2);
-            const dy = e.clientY - (r.top + r.height / 2);
-            xTo(dx * 0.35);
-            yTo(dy * 0.35);
-            if (lblX) {
-              lblX(dx * 0.15);
-              lblY(dy * 0.15);
-            }
-          };
-          const leave = () => {
-            xTo(0);
-            yTo(0);
-            if (lblX) {
-              lblX(0);
-              lblY(0);
-            }
-          };
-          el.addEventListener("mousemove", move);
-          el.addEventListener("mouseleave", leave);
-          return { el, move, leave };
-        });
+        let rt;
+        const onResize = () => {
+          clearTimeout(rt);
+          rt = setTimeout(() => {
+            build();
+            lockHeadline(true);
+          }, 150);
+        };
+
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerdown", onDown);
+        window.addEventListener("resize", onResize);
+        document.addEventListener("pointerleave", onLeave);
 
         return () => {
-          unlock();
-          if (skipBtn) skipBtn.removeEventListener("click", onSkip);
-          window.removeEventListener("mousemove", onMove);
-          magnets.forEach(({ el, move, leave }) => {
-            el.removeEventListener("mousemove", move);
-            el.removeEventListener("mouseleave", leave);
-          });
+          gsap.ticker.remove(tick);
+          clearTimeout(rt);
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerdown", onDown);
+          window.removeEventListener("resize", onResize);
+          document.removeEventListener("pointerleave", onLeave);
         };
       });
     },
     { scope: heroRef },
   );
 
+  const corner = "absolute size-3 border-[#D3DAD9]";
+
   return (
-    <main
-      ref={heroRef}
-      className="relative min-h-screen overflow-hidden px-6 pt-7 text-[#D3DAD9] md:h-screen md:px-12 lg:px-20"
-    >
-      {/* ===== INTRO OVERLAY ===== */}
-      <div className="intro fixed inset-0 z-50">
-        {/* Iris: enam bilah, awalnya menutup penuh */}
-        <svg
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full"
-          viewBox="-500 -500 1000 1000"
-          preserveAspectRatio="xMidYMid slice"
-        >
-          <g className="ap-iris">
-            {BLADES.map((deg) => (
-              <g key={deg} transform={`rotate(${deg})`}>
-                <polygon
-                  className="ap-blade"
-                  points="-1500,-2200 1500,-2200 1500,-700 -1500,-700"
-                  fill="#37353E"
-                  stroke="rgba(211,218,217,0.28)"
-                  strokeWidth="2"
-                />
-              </g>
-            ))}
-          </g>
-        </svg>
-
-        {/* Kata-kata di atas iris */}
-        <div className="absolute inset-0 grid place-items-center">
-          <p
-            className={`intro-pre absolute top-[34%] text-lg text-[#D3DAD9]/70 opacity-0 md:text-2xl ${DISPLAY}`}
-          >
-            I'm a
-          </p>
-
-          <h2 className={`${WORD} w-eng`} aria-label="Software Engineer">
-            {"Engineer".split("").map((c, i) => (
-              <span key={i} className="ch inline-block">
-                {c}
-              </span>
-            ))}
-            <span className="intro-caret ml-1 inline-block h-[0.75em] w-[0.07em] bg-[#D3DAD9] align-baseline" />
-          </h2>
-
-          <h2 className={`${WORD} w-bar`}>
-            <span className="bg-clip-text text-transparent">Barber</span>
-          </h2>
-
-          <h2 className={`${WORD} w-pho`}>Photographer</h2>
+    <main ref={heroRef} className={`relative flex min-h-screen touch-pan-y flex-col overflow-hidden bg-[radial-gradient(ellipse_at_30%_40%,#5a5a66_0%,#44444E_35%,#2f2d35_100%)] px-6 pb-16 pt-7 text-[#D3DAD9] md:h-screen md:px-12 md:pb-0 lg:px-20 ${BODY}`}>
+      <nav className="navbar relative z-20 mx-auto flex w-full max-w-7xl items-center justify-between rounded-full border border-[#D3DAD9]/15 bg-[#2a2830]/70 px-6 py-3.5 backdrop-blur-xl">
+        <a href="#" className={`${DISPLAY} text-base font-bold`}>imagham</a>
+        <div className="hidden items-center gap-8 text-sm font-medium text-[#D3DAD9]/70 md:flex lg:gap-12">
+          <a href="#about" className="transition hover:text-[#D3DAD9]">About</a>
+          <a href="#works" className="transition hover:text-[#D3DAD9]">Works</a>
+          <a href="#gallery" className="transition hover:text-[#D3DAD9]">Gallery</a>
         </div>
-
-        <div className="intro-flash pointer-events-none absolute inset-0 bg-[#D3DAD9] opacity-0" />
-
-        <button
-          type="button"
-          className={`intro-skip absolute bottom-6 right-6 rounded-full border border-[#D3DAD9]/25 px-4 py-2 text-sm text-[#D3DAD9]/70 transition hover:text-[#D3DAD9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D3DAD9] ${DISPLAY}`}
-        >
-          Skip intro
-        </button>
-      </div>
-
-      {/* ===== HERO ===== */}
-      <div className="hero-bg absolute inset-0 z-0 overflow-hidden rounded-b-[20%] bg-[#37353E]">
-        <div className="absolute inset-0 opacity-[0.07] bg-[linear-gradient(to_right,#D3DAD9_1px,transparent_1px),linear-gradient(to_bottom,#D3DAD9_1px,transparent_1px)] bg-size-[64px_64px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]" />
-      </div>
-
-      <div className="hero-glow hero-glow-1 pointer-events-none absolute -right-32 top-20 h-96 w-96 rounded-full bg-[#715A5A]/30 blur-[100px]" />
-      <div className="hero-glow hero-glow-2 pointer-events-none absolute -bottom-40 -left-20 h-96 w-96 rounded-full bg-[#D3DAD9]/10 blur-[100px]" />
-
-      <nav className="navbar relative z-20 mx-auto flex w-full max-w-7xl items-center justify-between rounded-full border border-[#D3DAD9]/20 bg-[#D3DAD9]/10 px-6 py-4 shadow-xl shadow-black/20 backdrop-blur-xl">
-        <a
-          href="#"
-          className="nav-item text-xl font-bold tracking-tight text-[#D3DAD9]"
-        >
-          imagham
-        </a>
-        <div className="hidden items-center gap-8 text-sm text-[#D3DAD9]/75 md:flex lg:gap-12">
-          <a href="#about" className="nav-item transition hover:text-[#D3DAD9]">
-            About
-          </a>
-          <a href="#works" className="nav-item transition hover:text-[#D3DAD9]">
-            Works
-          </a>
-          <a
-            href="#gallery"
-            className="nav-item transition hover:text-[#D3DAD9]"
-          >
-            Gallery
-          </a>
-        </div>
-        <a
-          href="#contact"
-          className="nav-item rounded-full bg-[#715A5A] px-5 py-2.5 text-sm font-semibold text-[#D3DAD9] transition hover:bg-[#44444E]"
-        >
-          Let's Talk
-        </a>
+        <a href="#contact" className="rounded-full bg-[#D3DAD9] px-5 py-2.5 text-sm font-semibold text-[#37353E] transition hover:bg-white">Let's Talk</a>
       </nav>
 
-      <section className="relative z-10 mt-20 flex flex-col items-center justify-center text-center">
-        <h1
-          className={`parallax ${DISPLAY} text-5xl font-extrabold leading-[0.95] tracking-[-0.03em] text-[#D3DAD9] md:text-5xl lg:text-[80px] xl:text-[100px]`}
-          data-depth="14"
-        >
-          <span className="block overflow-hidden pb-2">
-            <span className="hero-heading-line block">
-              Where <span className="scramble">Technology</span>
-            </span>
-          </span>
-          <span className="block overflow-hidden pb-2">
-            <span className="hero-heading-line block font-light italic text-[#D3DAD9]/90">
-              Meets Creativity.
-            </span>
-          </span>
+      <section className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center py-12 md:py-0">
+        {/* Judul ada di bawah rambut: baru terbaca setelah dicukur */}
+        <h1 className={`headline relative z-0 ${DISPLAY} text-[clamp(1.9rem,5.4vw,5.5rem)] font-bold leading-[1.1] tracking-[-0.04em]`}>
+          <span className="block">Where Technology</span>
+          <span className="block text-transparent [-webkit-text-stroke:1.5px_#D3DAD9]">Meets Creativity.</span>
         </h1>
 
-        <div className="hero-content flex flex-col items-center">
-          <p className="hero-description mt-10 max-w-2xl text-lg font-semibold text-[#D3DAD9]/80 md:text-xl">
-            {TEXT.split(" ").map((word, i) => (
-              <span
-                key={i}
-                className="mr-[0.28em] inline-block overflow-hidden align-bottom"
-              >
-                <span className="word inline-block will-change-transform">
-                  {word}
-                </span>
-              </span>
+        <div className="relative z-10 mt-8 max-w-xl">
+          <ul className="ui-in flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold" aria-label="Peran">
+            {ROLES.map((r, i) => (
+              <li key={r} className={i ? "border-l border-[#D3DAD9]/30 pl-6" : ""}>{r}</li>
             ))}
-          </p>
-
-          <a
-            href="#about"
-            className="hero-button magnet relative mt-8 inline-block overflow-hidden rounded-full bg-[#D3DAD9] px-8 py-3 text-lg font-semibold text-[#37353E] transition-colors hover:bg-white"
-          >
-            <span className="label relative z-10 inline-block">
-              Get Started
-            </span>
-            <span className="shine pointer-events-none absolute inset-y-0 left-0 w-1/3 -skew-x-12 bg-[#37353E]/15 blur-sm" />
-          </a>
+          </ul>
+          <p className="ui-in mt-5 text-base leading-relaxed text-[#D3DAD9]/80 md:text-lg">{TEXT}</p>
+          <div className="ui-in mt-7 flex flex-wrap gap-4">
+            <a href="#about" className="rounded-full bg-[#D3DAD9] px-8 py-3.5 font-semibold text-[#37353E] transition hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D3DAD9]">Get Started</a>
+            <a href="#works" className="rounded-full border border-[#D3DAD9]/40 bg-[#2a2830]/60 px-8 py-3.5 font-semibold backdrop-blur transition hover:border-[#D3DAD9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D3DAD9]">View Works</a>
+          </div>
         </div>
       </section>
+
+      {/* Lapisan rambut di atas judul, di bawah UI */}
+      <canvas aria-hidden="true" className="hair pointer-events-none absolute inset-0 z-[1] h-full w-full" />
+
+      <p className="hint ui-in pointer-events-none absolute bottom-6 right-6 z-10 hidden text-xs text-[#D3DAD9]/60 md:block">Move to shave. Click to shoot.</p>
+
+      {/* Kursor: bingkai fokus kamera */}
+      <div aria-hidden="true" className="cursor pointer-events-none fixed left-0 top-0 z-[60] size-32 opacity-0 [@media(hover:none)]:hidden">
+        <span className={`${corner} left-0 top-0 border-l-2 border-t-2`} />
+        <span className={`${corner} right-0 top-0 border-r-2 border-t-2`} />
+        <span className={`${corner} bottom-0 left-0 border-b-2 border-l-2`} />
+        <span className={`${corner} bottom-0 right-0 border-b-2 border-r-2`} />
+        <span className="absolute left-1/2 top-1/2 size-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#D3DAD9]" />
+      </div>
+      <div aria-hidden="true" className="flash pointer-events-none fixed inset-0 z-[70] bg-white opacity-0" />
     </main>
   );
 }
