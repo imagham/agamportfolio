@@ -40,74 +40,49 @@ const SECTIONS = [
 ];
 
 /* ---------- Transisi A: kata-kata berjalan berlawanan arah, miring mengikuti kecepatan scroll ---------- */
-function WordsTransition({ from, to }) {
+function IrisTransition({ from }) {
   const ref = useRef(null);
 
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        const st = { trigger: ref.current, start: "top bottom", end: "bottom top", scrub: true };
-        gsap.fromTo(".wt-a", { xPercent: 0 }, { xPercent: -35, ease: "none", scrollTrigger: st });
-        gsap.fromTo(".wt-b", { xPercent: -35 }, { xPercent: 0, ease: "none", scrollTrigger: st });
+        const st = { trigger: ref.current, start: "top 80%", end: "bottom 20%", scrub: true };
 
-        // Satu quickTo per baris: lebih aman daripada quickTo pada selector yang cocok ke banyak elemen
-        const skews = gsap.utils.toArray(".wt-row").map((el) => gsap.quickTo(el, "skewX", { duration: 0.4, ease: "power3" }));
-        const setSkew = (v) => skews.forEach((fn) => fn(v));
-        const reset = gsap.delayedCall(0.12, () => setSkew(0)).pause();
+        gsap.fromTo(
+          ".iris-fill",
+          { clipPath: "circle(0% at 50% 50%)" },
+          { clipPath: "circle(100% at 50% 50%)", ease: "none", scrollTrigger: st }
+        );
 
-        ScrollTrigger.create({
-          ...st,
-          scrub: undefined,
-          onUpdate: (self) => {
-            setSkew(gsap.utils.clamp(-8, 8, self.getVelocity() / -150));
-            reset.restart(true);
-          },
-          onLeave: () => setSkew(0),
-          onLeaveBack: () => setSkew(0),
-        });
-        return () => reset.kill();
+        gsap.fromTo(
+          ".iris-ring",
+          { scale: 0.4, opacity: 0.8, rotate: -45 },
+          { scale: 2.2, opacity: 0, rotate: 45, ease: "none", scrollTrigger: st }
+        );
       });
     },
-    { scope: ref },
-  );
-
-  const unit = (
-    <span className="flex items-center gap-[4vw] pr-[4vw]">
-      {["Kode", "Kamera", "Klipper"].map((w) => (
-        <span key={w} className="flex items-center gap-[4vw]">
-          {w}
-          <span className="inline-block size-[2.4vw] rounded-full bg-current opacity-60" />
-        </span>
-      ))}
-    </span>
+    { scope: ref }
   );
 
   return (
-    <div ref={ref} aria-hidden="true" className="relative flex flex-col justify-center gap-2 overflow-hidden py-16 md:gap-4 md:py-24" style={{ background: `linear-gradient(to bottom, ${from}, ${to})` }}>
-      <div className={`wt-row wt-a flex w-max whitespace-nowrap text-[14vw] font-extrabold leading-none tracking-[-0.04em] text-[#D3DAD9] will-change-transform ${DISPLAY}`}>
-        {unit}
-        {unit}
-        {unit}
-        {unit}
-      </div>
+    <div ref={ref} aria-hidden="true" className="relative h-[55vh] overflow-hidden" style={{ background: from }}>
       <div
-        className={`wt-row wt-b flex w-max whitespace-nowrap text-[14vw] font-extrabold leading-none tracking-[-0.04em] text-transparent will-change-transform ${DISPLAY}`}
-        style={{ WebkitTextStroke: "2px rgba(211,218,217,0.55)" }}
-      >
-        {unit}
-        {unit}
-        {unit}
-        {unit}
+        className="iris-fill absolute inset-0"
+        style={{ background: "linear-gradient(to bottom, #2C2C2C, #612D53)" }}
+      />
+
+      <div className="pointer-events-none absolute inset-0 grid place-items-center">
+        <div className="iris-ring size-[28vw] rounded-full border border-[#D3DAD9]/30" />
+        <span className="absolute text-xs tracking-widest text-[#D3DAD9]/40">+</span>
       </div>
     </div>
   );
 }
-
 /* ---------- Transisi B: rana shutter kamera membuka, menuju proyek ---------- */
 const BLADES = 8;
 
-function ShutterTransition({ from, to, label }) {
+function ShutterTransition({ from, label }) {
   const ref = useRef(null);
 
   useGSAP(
@@ -124,7 +99,12 @@ function ShutterTransition({ from, to, label }) {
   );
 
   return (
-    <div ref={ref} aria-hidden="true" className="relative grid h-[55vh] place-items-center overflow-hidden" style={{ background: to }}>
+    <div
+      ref={ref}
+      aria-hidden="true"
+      className="relative grid h-[55vh] place-items-center overflow-hidden"
+      style={{ background: "linear-gradient(to bottom, #612D53, #2C2C2C)" }}
+    >
       {Array.from({ length: BLADES }, (_, i) => (
         <span
           key={i}
@@ -161,7 +141,7 @@ function Reel({ className = "", dir, frames }) {
   );
 }
 
-function FilmTransition({ from, to }) {
+function FilmTransition() {
   const ref = useRef(null);
 
   useGSAP(
@@ -177,13 +157,17 @@ function FilmTransition({ from, to }) {
   );
 
   return (
-    <div ref={ref} aria-hidden="true" className="relative h-[75vh] overflow-hidden md:h-[80vh]" style={{ background: `linear-gradient(to bottom, ${from}, ${to})` }}>
+    <div
+      ref={ref}
+      aria-hidden="true"
+      className="relative h-[75vh] overflow-hidden md:h-[80vh]"
+      style={{ background: "linear-gradient(to bottom, #2C2C2C, #612D53)" }}
+    >
       <Reel className="top-[8%] -rotate-3" dir="l" frames={[...FRAMES, ...FRAMES]} />
       <Reel className="bottom-[8%] rotate-2 opacity-70" dir="r" frames={[...FRAMES, ...FRAMES].reverse()} />
     </div>
   );
 }
-
 /* ---------- Navigasi section: titik di sisi kanan, label muncul saat di-hover atau difokus ---------- */
 function SectionNav() {
   const [active, setActive] = useState(SECTIONS[0].id);
@@ -322,7 +306,7 @@ export default function LandingPage() {
         <div id="s-tech">
           <TechStack />
         </div>
-        <WordsTransition from={BG.tech} to={BG.journey} />
+        <IrisTransition from={BG.tech} to={BG.journey} />
         <div id="s-journey">
           <JourneyEducation />
         </div>

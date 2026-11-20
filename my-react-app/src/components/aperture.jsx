@@ -6,28 +6,23 @@ import { useGSAP } from "@gsap/react";
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 /*
-  Font: Bricolage Grotesque (variable). Tambahkan sekali di index.html / CSS global:
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,500;12..96,800&display=swap" rel="stylesheet">
+  Font: Geist. Tambahkan sekali di CSS global:
+  @import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap");
 */
-const DISPLAY_FONT = "font-['Bricolage_Grotesque',system-ui,sans-serif]";
+const SANS = "font-['Geist',system-ui,sans-serif]";
 const BLADES = [0, 60, 120, 180, 240, 300];
 
-const OUTLINE = {
-  WebkitTextStroke: "1.5px rgba(211,218,217,0.6)",
-  color: "transparent",
-};
-
 /*
-  Aperture + focus pull:
-  1. Bilah diafragma membuka sambil berputar (scrub).
-  2. Di dalam bukaan, judul masih buram (out of focus) lalu menajam.
-  3. Baris kedua mulai sebagai garis tepi, lalu terisi dari kiri ke kanan.
-  4. Angka f-stop turun-naik realistis dari f/1.4 ke f/8.0 mengikuti bukaan.
-  5. Reticle fokus mengunci di akhir, lalu muncul "Fokus terkunci".
-  Reduced motion: langsung tampil dalam keadaan terbuka dan tajam.
+  Konsep: teks berada tepat di tengah bukaan diafragma.
+  1. Layar mulai tertutup enam bilah iris, lalu membuka sambil berputar.
+     Cahaya rose di baliknya terungkap seiring bukaan membesar.
+  2. Cincin lensa tipis ikut mengembang di balik bilah.
+  3. Judul di tengah menajam dari buram (focus pull), baris kedua terisi dari kiri.
+  4. Bingkai fokus mengunci di sekeliling judul, lalu "Fokus terkunci" menyala.
+  Reduced motion: langsung tampil terbuka dan tajam.
+
+  PALET: #2C2C2C latar (menyambung mulus dengan About), #612D53 bilah, #853953 cahaya,
+  #E58FA8 garis dan titik status (turunan rose), #F3F4F4 teks.
 */
 export default function Aperture() {
   const root = useRef(null);
@@ -38,134 +33,105 @@ export default function Aperture() {
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         gsap.set(".ap-iris", { svgOrigin: "0 0" });
-
-        const fstop = { n: 1.4 };
-        const readout = root.current.querySelector(".ap-fstop");
+        gsap.set(".ap-ring", { svgOrigin: "0 0" });
 
         gsap
           .timeline({
             defaults: { ease: "none" },
-            scrollTrigger: {
-              trigger: root.current,
-              start: "top top",
-              end: "bottom bottom",
-              scrub: 1,
-            },
+            scrollTrigger: { trigger: root.current, start: "top top", end: "bottom bottom", scrub: 1 },
           })
           // Bilah membuka + berputar
-          .fromTo(".ap-blade", { y: 700 }, { y: 0, duration: 1, ease: "power2.inOut" }, 0)
-          .fromTo(".ap-iris", { rotate: 0 }, { rotate: 70, duration: 1, ease: "power2.inOut" }, 0)
-          // Kilatan shutter
-          .fromTo(".ap-flash", { opacity: 0.45 }, { opacity: 0, duration: 0.3, ease: "power2.out" }, 0)
-          // Bingkai viewfinder masuk
-          .fromTo(".ap-frame", { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: 0.5, ease: "power2.out" }, 0.4)
-          // Angka f-stop
-          .fromTo(
-            fstop,
-            { n: 1.4 },
-            {
-              n: 8,
-              duration: 1.1,
-              ease: "power1.inOut",
-              onUpdate: () => {
-                if (readout) readout.textContent = "f/" + fstop.n.toFixed(1);
-              },
-            },
-            0.1,
-          )
+          .fromTo(".ap-blade", { y: 700 }, { y: 0, duration: 1.2, ease: "power2.inOut" }, 0)
+          .fromTo(".ap-iris", { rotate: 0 }, { rotate: 80, duration: 1.2, ease: "power2.inOut" }, 0)
+          // Cahaya di balik bukaan membesar
+          .fromTo(".ap-glow", { scale: 0.4, opacity: 0.2 }, { scale: 1, opacity: 1, duration: 1.3, ease: "power2.out" }, 0)
+          // Cincin lensa mengembang
+          .fromTo(".ap-ring", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 1.2, stagger: 0.12, ease: "power2.out" }, 0.2)
           // Judul: fokus menajam dari buram
           .fromTo(
             ".ap-text",
-            { filter: "blur(22px)", opacity: 0.2, letterSpacing: "0.04em" },
-            { filter: "blur(0px)", opacity: 1, letterSpacing: "-0.03em", duration: 0.75, ease: "power2.out" },
-            0.45,
+            { filter: "blur(20px)", opacity: 0.15, scale: 0.94 },
+            { filter: "blur(0px)", opacity: 1, scale: 1, duration: 0.8, ease: "power2.out" },
+            0.5,
           )
-          // Baris kedua: outline terisi dari kiri
-          .fromTo(
-            ".ap-fill",
-            { clipPath: "inset(0 100% 0 0)" },
-            { clipPath: "inset(0 0% 0 0)", duration: 0.6, ease: "power2.inOut" },
-            1.0,
-          )
-          // Reticle mengunci
-          .fromTo(
-            ".ap-reticle",
-            { opacity: 0, scale: 2.2, rotate: -20 },
-            { opacity: 1, scale: 1, rotate: 0, duration: 0.35, ease: "back.out(2)" },
-            1.35,
-          )
-          .fromTo(".ap-lock", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.25 }, 1.55)
+          // Baris kedua: dari redup ke terang, menyapu dari kiri
+          .fromTo(".ap-fill", { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 0.6, ease: "power2.inOut" }, 1.15)
+          // Bingkai fokus mengunci
+          .fromTo(".ap-reticle", { opacity: 0, scale: 1.12 }, { opacity: 1, scale: 1, duration: 0.4, ease: "power3.out" }, 1.6)
+          .fromTo(".ap-lock", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, 1.75)
+          .fromTo(".ap-dot", { scale: 0 }, { scale: 1, duration: 0.3, ease: "back.out(3)" }, 1.8)
           // Dorongan zoom kecil sebelum lepas
-          .to(".ap-text", { scale: 1.05, duration: 0.5 }, 1.6);
+          .to(".ap-stage", { scale: 1.04, duration: 0.5 }, 1.85);
       });
     },
     { scope: root },
   );
 
+  const corner = "absolute h-6 w-6 border-[#F3F4F4]/80 md:h-8 md:w-8";
+
   return (
-    <section ref={root} className="relative h-[260vh] bg-[#44444E] text-[#D3DAD9]">
-      <div className="sticky top-0 h-screen overflow-hidden bg-[#44444E]">
-        {/* Glow latar */}
-        <div className="pointer-events-none absolute -left-40 top-1/4 h-112 w-md rounded-full bg-[#715A5A]/25 blur-[120px]" />
-        <div className="pointer-events-none absolute -right-40 bottom-0 h-112 w-md rounded-full bg-[#D3DAD9]/10 blur-[120px]" />
+    <section ref={root} className={`${SANS} relative h-[260vh] bg-[#2C2C2C] text-[#F3F4F4] antialiased`}>
+      <div className="sticky top-0 h-screen overflow-hidden bg-[#2C2C2C]">
+        {/* Cahaya hangat di balik bukaan */}
+        <div
+          aria-hidden="true"
+          className="ap-glow pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(48% 52% at 50% 50%, rgba(229,143,168,0.40) 0%, rgba(133,57,83,0.58) 40%, rgba(97,45,83,0.34) 66%, rgba(44,44,44,0) 85%)",
+          }}
+        />
 
-        {/* Bingkai viewfinder */}
-        <div className="ap-frame pointer-events-none absolute inset-5 md:inset-10">
-          <span className="absolute left-0 top-0 h-8 w-8 border-l-2 border-t-2 border-[#D3DAD9]/60" />
-          <span className="absolute right-0 top-0 h-8 w-8 border-r-2 border-t-2 border-[#D3DAD9]/60" />
-          <span className="absolute bottom-0 left-0 h-8 w-8 border-b-2 border-l-2 border-[#D3DAD9]/60" />
-          <span className="absolute bottom-0 right-0 h-8 w-8 border-b-2 border-r-2 border-[#D3DAD9]/60" />
-
-          {/* Readout di bawah bingkai */}
-          <div
-            className={`absolute -bottom-1 left-12 right-12 flex items-end justify-between text-sm tabular-nums text-[#D3DAD9]/70 md:text-base ${DISPLAY_FONT}`}
-          >
-            <span className="ap-fstop font-medium">f/8.0</span>
-            <span className="ap-lock text-[#D3DAD9]">Fokus terkunci</span>
-            <span className="font-medium">1/250</span>
-          </div>
-        </div>
-
-        {/* Judul */}
-        <div className="absolute inset-0 grid place-items-center px-6 text-center">
-          <h2
-            className={`ap-text ${DISPLAY_FONT} text-5xl font-extrabold leading-[0.95] tracking-[-0.03em] md:text-7xl lg:text-8xl`}
-          >
-            <span className="block pb-[0.08em]">Dari balik lensa,</span>
-            <span className="relative mt-1 block pb-[0.08em]">
-              {/* Lapisan outline (selalu ada) */}
-              <span style={OUTLINE} aria-hidden="true">
-                ke balik layar.
-              </span>
-              {/* Lapisan isi: terbuka dari kiri */}
-              <span className="ap-fill absolute inset-0 block text-[#D3DAD9]">ke balik layar.</span>
-            </span>
-          </h2>
-
-          {/* Reticle fokus di tengah */}
-          <div className="ap-reticle pointer-events-none absolute left-1/2 top-1/2 h-[46vmin] w-[46vmin] max-w-[520px] -translate-x-1/2 -translate-y-1/2">
-            <span className="absolute left-0 top-0 h-4 w-4 border-l border-t border-[#D3DAD9]/70" />
-            <span className="absolute right-0 top-0 h-4 w-4 border-r border-t border-[#D3DAD9]/70" />
-            <span className="absolute bottom-0 left-0 h-4 w-4 border-b border-l border-[#D3DAD9]/70" />
-            <span className="absolute bottom-0 right-0 h-4 w-4 border-b border-r border-[#D3DAD9]/70" />
-          </div>
-        </div>
-
-        {/* Iris: enam bilah. Keadaan statis = terbuka. */}
+        {/* Cincin lensa + iris */}
         <svg
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 h-full w-full"
           viewBox="-500 -500 1000 1000"
           preserveAspectRatio="xMidYMid slice"
         >
+          <defs>
+            <linearGradient id="ap-grad-a" gradientUnits="userSpaceOnUse" x1="0" y1="-700" x2="0" y2="-1500">
+              <stop offset="0" stopColor="#612D53" />
+              <stop offset="1" stopColor="#3F1D37" />
+            </linearGradient>
+            <linearGradient id="ap-grad-b" gradientUnits="userSpaceOnUse" x1="0" y1="-700" x2="0" y2="-1500">
+              <stop offset="0" stopColor="#52264A" />
+              <stop offset="1" stopColor="#34162E" />
+            </linearGradient>
+            {/* Bayangan di bawah tepi bilah, jatuh ke arah bukaan */}
+            <linearGradient id="ap-shade" gradientUnits="userSpaceOnUse" x1="0" y1="-700" x2="0" y2="-560">
+              <stop offset="0" stopColor="#000" stopOpacity="0.55" />
+              <stop offset="1" stopColor="#000" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+
+          <g fill="none" stroke="#E58FA8">
+            <circle className="ap-ring" r="300" strokeOpacity="0.32" />
+            <circle className="ap-ring" r="400" strokeOpacity="0.20" />
+            <circle className="ap-ring" r="500" strokeOpacity="0.12" />
+          </g>
+
           <g className="ap-iris">
-            {BLADES.map((deg) => (
+            {BLADES.map((deg, i) => (
               <g key={deg} transform={`rotate(${deg})`}>
                 <polygon
                   className="ap-blade"
+                  points="-1500,-700 1500,-700 1500,-560 -1500,-560"
+                  fill="url(#ap-shade)"
+                />
+                <polygon
+                  className="ap-blade"
                   points="-1500,-2200 1500,-2200 1500,-700 -1500,-700"
-                  fill="#37353E"
-                  stroke="rgba(211,218,217,0.28)"
+                  fill={i % 2 === 0 ? "url(#ap-grad-a)" : "url(#ap-grad-b)"}
+                />
+                <line
+                  className="ap-blade"
+                  x1="-1500"
+                  y1="-700"
+                  x2="1500"
+                  y2="-700"
+                  stroke="#E58FA8"
+                  strokeOpacity="0.6"
                   strokeWidth="2"
                 />
               </g>
@@ -173,8 +139,30 @@ export default function Aperture() {
           </g>
         </svg>
 
-        {/* Kilatan shutter */}
-        <div className="ap-flash pointer-events-none absolute inset-0 bg-[#D3DAD9] opacity-0" />
+        {/* Judul di tengah bukaan */}
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6">
+          <div className="ap-stage relative px-8 py-10 md:px-16 md:py-14">
+            <h2 className="ap-text text-center text-5xl font-medium leading-[0.98] tracking-[-0.04em] drop-shadow-[0_4px_30px_rgba(44,44,44,0.55)] md:text-7xl xl:text-[7.5rem]">
+              <span className="block pb-[0.06em]">Dari balik lensa,</span>
+              <span className="relative block pb-[0.06em]">
+                {/* Lapisan redup (selalu ada) */}
+                <span className="text-[#F3F4F4]/25" aria-hidden="true">ke balik layar.</span>
+                {/* Lapisan terang: terbuka dari kiri */}
+                <span className="ap-fill absolute inset-0 block">ke balik layar.</span>
+              </span>
+            </h2>
+
+            {/* Bingkai fokus */}
+            <div aria-hidden="true" className="ap-reticle pointer-events-none absolute inset-0">
+              <span className={`${corner} left-0 top-0 border-l-2 border-t-2`} />
+              <span className={`${corner} right-0 top-0 border-r-2 border-t-2`} />
+              <span className={`${corner} bottom-0 left-0 border-b-2 border-l-2`} />
+              <span className={`${corner} bottom-0 right-0 border-b-2 border-r-2`} />
+            </div>
+          </div>
+
+         
+        </div>
       </div>
     </section>
   );
