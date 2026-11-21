@@ -11,9 +11,12 @@ const DISPLAY = "font-['Sora',system-ui,sans-serif]";
 const BODY = "font-['Plus_Jakarta_Sans',system-ui,sans-serif]";
 
 /*
-  PALET
-  #2C2C2C latar · #F3F4F4 teks · #853953 rose (bidang: tab aktif) · #612D53 plum (cahaya latar)
-  #E58FA8 rose muda (garis dan aksen di atas gelap). Permukaan kartu = putih transparan di atas latar.
+  KONSEP: daftar editorial. Empat kategori sebagai baris yang dipisah garis tipis, tiap baris berisi
+  nama kategori di kiri dan teknologinya di kanan. Semua logo dibuat monokrom putih supaya selaras
+  dengan palet, lalu menyala dengan warna aslinya saat di-hover. Saat satu baris di-hover,
+  baris lain meredup dan garis rose muncul di tepi kirinya.
+
+  PALET: #2C2C2C latar · #F3F4F4 teks · #E58FA8 aksen kecil (garis, angka) · #612D53 cahaya latar
 */
 
 /* Logo diambil dari Devicon (CDN), tidak perlu install paket apa pun.
@@ -42,7 +45,7 @@ const GROUPS = [
   ] },
 ];
 
-const ALL = GROUPS.flatMap((g) => g.items);
+const TOTAL = GROUPS.reduce((n, g) => n + g.items.length, 0);
 
 const ICONS = {
   camera: <><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></>,
@@ -51,16 +54,17 @@ const ICONS = {
   api: <path d="M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0zM12 16v5" />,
 };
 
+/* Logo: monokrom putih, berwarna asli saat chip di-hover. */
 function Logo({ item }) {
   const [bad, setBad] = useState(false);
   if (item.ic) {
     return (
-      <svg viewBox="0 0 24 24" fill="none" stroke="#F3F4F4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-full p-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#F3F4F4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="size-full opacity-80 transition-opacity duration-300 group-hover/chip:opacity-100">
         {ICONS[item.ic]}
       </svg>
     );
   }
-  if (bad) return <span className={`${DISPLAY} grid size-full place-items-center text-2xl font-bold`}>{item.n[0]}</span>;
+  if (bad) return <span className={`${DISPLAY} grid size-full place-items-center text-lg font-bold`}>{item.n[0]}</span>;
   return (
     <img
       src={dev(item.s, item.v)}
@@ -68,215 +72,107 @@ function Logo({ item }) {
       loading="lazy"
       draggable="false"
       onError={() => setBad(true)}
-      className={`size-full object-contain ${item.mono ? "brightness-0 invert" : ""}`}
+      className={`size-full object-contain transition-[filter,opacity] duration-300 ${
+        item.mono
+          ? "[filter:brightness(0)_invert(1)] opacity-80 group-hover/chip:opacity-100"
+          : "[filter:brightness(0)_invert(1)] opacity-80 group-hover/chip:[filter:none] group-hover/chip:opacity-100"
+      }`}
     />
-  );
-}
-
-/* Kartu: cahaya mengikuti kursor + miring 3D tipis (hanya untuk mouse) */
-function Tile({ item }) {
-  const el = useRef(null);
-
-  const move = (e) => {
-    if (e.pointerType !== "mouse") return;
-    const r = el.current.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width;
-    const py = (e.clientY - r.top) / r.height;
-    el.current.style.setProperty("--mx", `${px * 100}%`);
-    el.current.style.setProperty("--my", `${py * 100}%`);
-    gsap.to(el.current, { rotationY: (px - 0.5) * 14, rotationX: (0.5 - py) * 14, transformPerspective: 800, duration: 0.4, ease: "power3.out", overwrite: "auto" });
-  };
-  const leave = () => gsap.to(el.current, { rotationX: 0, rotationY: 0, duration: 0.7, ease: "power3.out", overwrite: "auto" });
-
-  return (
-    <li
-      ref={el}
-      onPointerMove={move}
-      onPointerLeave={leave}
-      className="ts-tile group relative flex min-h-36 flex-col justify-between overflow-hidden rounded-2xl border border-[#F3F4F4]/10 bg-[#F3F4F4]/[0.04] p-5 transition-colors duration-300 hover:border-[#E58FA8]/45 md:min-h-40"
-    >
-      {/* Cahaya kursor */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        style={{ background: "radial-gradient(220px circle at var(--mx,50%) var(--my,50%), rgba(229,143,168,0.22), transparent 70%)" }}
-      />
-      <div className="ts-logo relative size-12 md:size-14">
-        <div className="size-full transition-transform duration-300 group-hover:scale-110">
-          <Logo item={item} />
-        </div>
-      </div>
-      <span className={`${DISPLAY} relative text-base font-semibold tracking-tight md:text-lg`}>{item.n}</span>
-    </li>
   );
 }
 
 export default function TechStack() {
   const root = useRef(null);
-  const first = useRef(true);
-  const [active, setActive] = useState(0);
-  const group = GROUPS[active];
 
-  /* Sekali: judul, hitungan angka, cahaya latar parallax, marquee yang ikut kecepatan scroll */
+  /* Judul, hitungan angka, lalu tiap baris: garis menarik dari kiri, nama naik dari balik mask, chip muncul berurutan */
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        const st = { trigger: ".ts-head", start: "top 82%", once: true };
-        gsap.from(".ts-line", { yPercent: 110, duration: 1, stagger: 0.12, ease: "power4.out", scrollTrigger: st });
-        gsap.from(".ts-intro", { y: 16, opacity: 0, duration: 0.8, delay: 0.3, ease: "power3.out", scrollTrigger: st });
+        const hs = { trigger: ".ts-head", start: "top 82%", once: true };
+        gsap.from(".ts-line", { yPercent: 110, duration: 1, stagger: 0.12, ease: "power4.out", scrollTrigger: hs });
+        gsap.from(".ts-intro", { y: 16, opacity: 0, duration: 0.8, delay: 0.3, ease: "power3.out", scrollTrigger: hs });
 
         const n = { v: 0 };
         gsap.to(n, {
-          v: ALL.length, duration: 1.4, ease: "power2.out", scrollTrigger: st,
+          v: TOTAL, duration: 1.4, ease: "power2.out", scrollTrigger: hs,
           onUpdate: () => { root.current.querySelector(".ts-count").textContent = Math.round(n.v); },
         });
 
-        gsap.to(".ts-glow-a", { yPercent: -35, ease: "none", scrollTrigger: { trigger: root.current, start: "top bottom", end: "bottom top", scrub: true } });
-        gsap.to(".ts-glow-b", { yPercent: 35, ease: "none", scrollTrigger: { trigger: root.current, start: "top bottom", end: "bottom top", scrub: true } });
-
-        // Marquee berjalan terus; makin kencang saat scroll cepat, lalu kembali pelan
-        const loop = gsap.to(".ts-track", { xPercent: -50, duration: 50, ease: "none", repeat: -1 });
-        ScrollTrigger.create({
-          trigger: root.current, start: "top bottom", end: "bottom top",
-          onUpdate: (self) => {
-            loop.timeScale(1 + Math.min(Math.abs(self.getVelocity()) / 350, 5));
-            gsap.to(loop, { timeScale: 1, duration: 0.9, overwrite: true });
-          },
+        gsap.utils.toArray(".ts-row").forEach((row) => {
+          gsap
+            .timeline({ defaults: { ease: "power3.out" }, scrollTrigger: { trigger: row, start: "top 85%", once: true } })
+            .from(row.querySelector(".ts-rule"), { scaleX: 0, transformOrigin: "0% 50%", duration: 1.1, ease: "power3.inOut" })
+            .from(row.querySelector(".ts-name"), { yPercent: 110, duration: 0.8 }, 0.15)
+            .from(row.querySelector(".ts-note"), { y: 12, opacity: 0, duration: 0.7 }, 0.3)
+            .from(row.querySelectorAll(".ts-chip"), { y: 16, opacity: 0, duration: 0.6, stagger: 0.05 }, 0.3);
         });
+
+        gsap.from(".ts-rule-end", { scaleX: 0, transformOrigin: "0% 50%", duration: 1.1, ease: "power3.inOut", scrollTrigger: { trigger: ".ts-rule-end", start: "top 95%", once: true } });
       });
     },
     { scope: root },
   );
 
-  /* Pil penanda tab: meluncur ke tab aktif */
-  useGSAP(
-    () => {
-      const place = (instant) => {
-        const tab = root.current.querySelector(`#ts-tab-${active}`);
-        if (!tab) return;
-        gsap.to(".ts-pill", { x: tab.offsetLeft, width: tab.offsetWidth, duration: instant ? 0 : 0.55, ease: "power3.out" });
-      };
-      place(first.current);
-      first.current = false;
-      const onResize = () => place(true);
-      window.addEventListener("resize", onResize);
-      return () => window.removeEventListener("resize", onResize);
-    },
-    { scope: root, dependencies: [active] },
-  );
-
-  /* Tiap ganti kategori: judul kategori naik, kartu bangkit satu per satu, logo melayang pelan */
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        const st = { trigger: ".ts-grid", start: "top 88%", once: true };
-        gsap.from(".ts-gname", { yPercent: 110, duration: 0.8, ease: "power4.out", scrollTrigger: st });
-        gsap.from(".ts-note", { y: 14, opacity: 0, duration: 0.6, delay: 0.1, ease: "power3.out", scrollTrigger: st });
-        gsap.from(".ts-tile", {
-          y: 50, opacity: 0, rotationX: -40, transformPerspective: 800, transformOrigin: "50% 100%",
-          duration: 0.9, stagger: 0.07, ease: "power3.out", scrollTrigger: st,
-        });
-        gsap.utils.toArray(".ts-logo").forEach((l) => {
-          gsap.to(l, { y: -6, duration: 2 + Math.random() * 1.5, yoyo: true, repeat: -1, ease: "sine.inOut", delay: Math.random() * 1.5 });
-        });
-      });
-    },
-    { scope: root, dependencies: [active], revertOnUpdate: true },
-  );
-
-  const onKeyDown = (e) => {
-    const move = ["ArrowRight", "ArrowDown"].includes(e.key) ? 1 : ["ArrowLeft", "ArrowUp"].includes(e.key) ? -1 : 0;
-    if (!move) return;
-    e.preventDefault();
-    const next = (active + move + GROUPS.length) % GROUPS.length;
-    setActive(next);
-    root.current.querySelector(`#ts-tab-${next}`)?.focus();
-  };
-
   return (
-    <section id="skills" ref={root} className={`${BODY} relative overflow-clip bg-[#2C2C2C] py-20 text-[#F3F4F4] md:py-28`}>
-      {/* Cahaya latar */}
-      <div aria-hidden="true" className="ts-glow-a pointer-events-none absolute -left-40 top-1/4 h-112 w-md rounded-full bg-[#612D53]/45 blur-[120px]" />
-      <div aria-hidden="true" className="ts-glow-b pointer-events-none absolute -right-40 bottom-0 h-112 w-md rounded-full bg-[#853953]/30 blur-[120px]" />
+    <section id="skills" ref={root} className={`${BODY} relative overflow-clip bg-[#2C2C2C] px-6 py-24 text-[#F3F4F4] md:px-12 md:py-32 lg:px-20`}>
+      {/* Cahaya latar yang sangat halus */}
+      <div aria-hidden="true" className="pointer-events-none absolute -right-48 -top-24 h-112 w-md rounded-full bg-[#612D53]/35 blur-[130px]" />
 
-      <div className="relative mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
-        <header className="ts-head mb-12 flex flex-col gap-6 md:mb-14 md:flex-row md:items-end md:justify-between">
-          <h2 className={`${DISPLAY} text-5xl font-bold leading-none tracking-[-0.04em] md:text-7xl xl:text-8xl`}>
+      <div className="relative mx-auto max-w-7xl">
+        <header className="ts-head mb-16 flex flex-col gap-6 md:mb-24 md:flex-row md:items-end md:justify-between">
+          <h2 className={`${DISPLAY} text-5xl font-bold leading-[1] tracking-[-0.04em] md:text-7xl`}>
             {["Tech Stack", "& Skills"].map((line) => (
               <span key={line} className="block overflow-hidden pb-2">
                 <span className="ts-line block">{line}</span>
               </span>
             ))}
           </h2>
-          <p className="ts-intro max-w-xs text-base leading-relaxed text-[#F3F4F4]/70 md:text-right">
-            <span className={`${DISPLAY} ts-count text-[#E58FA8] font-semibold`}>{ALL.length}</span> teknologi dan alat yang saya pakai untuk membangun produk dari ide sampai rilis.
+          <p className="ts-intro max-w-xs text-base leading-relaxed text-[#F3F4F4]/75 md:text-right">
+            <span className={`${DISPLAY} ts-count font-semibold text-[#E58FA8]`}>{TOTAL}</span> teknologi dan alat yang saya pakai untuk membangun produk dari ide sampai rilis.
           </p>
         </header>
-      </div>
 
-      {/* Marquee semua teknologi */}
-      <div aria-hidden="true" className="mb-12 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_12%,#000_88%,transparent)] md:mb-16">
-        <div className="ts-track flex w-max gap-3 pr-3">
-          {[...ALL, ...ALL].map((item, i) => (
-            <span key={i} className="flex shrink-0 items-center gap-2.5 rounded-full border border-[#F3F4F4]/10 bg-[#F3F4F4]/[0.04] py-2 pl-2.5 pr-5 text-sm font-medium text-[#F3F4F4]/80">
-              <span className="size-6"><Logo item={item} /></span>
-              {item.n}
-            </span>
+        {/* Daftar kategori: baris lain meredup saat satu baris di-hover */}
+        <ul className="group/list">
+          {GROUPS.map((g) => (
+            <li
+              key={g.name}
+              className="ts-row group/row relative transition-opacity duration-300 md:group-hover/list:opacity-45 md:hover:!opacity-100"
+            >
+              <span aria-hidden="true" className="ts-rule absolute inset-x-0 top-0 block h-px bg-[#F3F4F4]/15" />
+              {/* Garis rose di tepi kiri saat baris di-hover */}
+              <span aria-hidden="true" className="absolute left-0 top-0 hidden h-full w-0.5 origin-top scale-y-0 bg-[#E58FA8] transition-transform duration-500 md:block md:group-hover/row:scale-y-100" />
+
+              <div className="grid gap-8 py-10 md:grid-cols-12 md:gap-10 md:py-14 md:pl-8">
+                <div className="md:col-span-4">
+                  <h3 className={`${DISPLAY} flex items-baseline gap-3 text-3xl font-semibold tracking-[-0.03em] transition-transform duration-500 md:text-4xl md:group-hover/row:translate-x-1`}>
+                    <span className="block overflow-hidden pb-1">
+                      <span className="ts-name block">{g.name}</span>
+                    </span>
+                    <span className="text-sm font-normal tabular-nums text-[#F3F4F4]/45">{g.items.length}</span>
+                  </h3>
+                  <p className="ts-note mt-3 max-w-xs text-base leading-relaxed text-[#F3F4F4]/70">{g.note}</p>
+                </div>
+
+                <ul className="flex flex-wrap content-start gap-3 md:col-span-8">
+                  {g.items.map((item) => (
+                    <li
+                      key={item.n}
+                      className="ts-chip group/chip inline-flex items-center gap-3 rounded-xl border border-[#F3F4F4]/10 bg-[#F3F4F4]/[0.03] py-2.5 pl-3 pr-4 transition-colors duration-300 hover:border-[#E58FA8]/50 hover:bg-[#F3F4F4]/[0.07]"
+                    >
+                      <span className="size-7 shrink-0">
+                        <Logo item={item} />
+                      </span>
+                      <span className="text-sm font-medium text-[#F3F4F4]/85">{item.n}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </li>
           ))}
-        </div>
-      </div>
-
-      <div className="relative mx-auto max-w-7xl px-6 md:px-12 lg:px-20">
-        {/* Pemilih kategori: pil rose meluncur ke tab aktif */}
-        <div className="mb-10 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div role="tablist" aria-label="Kategori skill" onKeyDown={onKeyDown} className="relative inline-flex rounded-full border border-[#F3F4F4]/12 bg-[#F3F4F4]/[0.04] p-1.5">
-            <span aria-hidden="true" className="ts-pill absolute bottom-1.5 left-0 top-1.5 w-0 rounded-full bg-[#853953]" />
-            {GROUPS.map((g, i) => (
-              <button
-                key={g.name}
-                id={`ts-tab-${i}`}
-                type="button"
-                role="tab"
-                aria-selected={i === active}
-                aria-controls="ts-panel"
-                tabIndex={i === active ? 0 : -1}
-                onClick={() => setActive(i)}
-                className={`${DISPLAY} relative z-10 shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold tracking-tight transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E58FA8] md:px-7 md:text-base ${
-                  i === active ? "text-[#F3F4F4]" : "text-[#F3F4F4]/60 hover:text-[#F3F4F4]"
-                }`}
-              >
-                {g.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div id="ts-panel" role="tabpanel" aria-labelledby={`ts-tab-${active}`} className="grid gap-10 lg:grid-cols-12 lg:gap-14">
-          {/* Judul kategori */}
-          <div className="lg:col-span-4">
-            <div className="lg:sticky lg:top-28">
-              <h3 className={`${DISPLAY} text-4xl font-bold tracking-[-0.03em] md:text-5xl`}>
-                <span className="block overflow-hidden pb-1">
-                  <span className="ts-gname block">{group.name}</span>
-                </span>
-              </h3>
-              <p className="ts-note mt-4 max-w-xs text-lg leading-relaxed text-[#F3F4F4]/75">{group.note}</p>
-              <p className="mt-6 inline-flex items-center gap-2 text-sm text-[#F3F4F4]/60">
-                <span aria-hidden="true" className="size-2 rounded-full bg-[#E58FA8]" />
-                {group.items.length} alat di kategori ini
-              </p>
-            </div>
-          </div>
-
-          {/* Kartu */}
-          <ul className="ts-grid grid grid-cols-2 gap-4 sm:grid-cols-3 lg:col-span-8">
-            {group.items.map((item) => (
-              <Tile key={`${group.name}-${item.n}`} item={item} />
-            ))}
-          </ul>
-        </div>
+        </ul>
+        <span aria-hidden="true" className="ts-rule-end block h-px bg-[#F3F4F4]/15" />
       </div>
     </section>
   );
