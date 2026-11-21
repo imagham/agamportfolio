@@ -8,30 +8,37 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const DISPLAY = "font-['Bricolage_Grotesque',system-ui,sans-serif]";
 
+/*
+  PALET
+  Section: #1F1F1F (turunan charcoal paling dalam, samakan BG.creative di landing page)
+  Kertas foto: #F3F4F4 dan #E9E3E7 · teks di kertas #2C2C2C · selotip: rose muda #E58FA8
+  Hover filter: rose #853953 (teks putih, kontras 7.0)
+*/
+
 /* ============ DATA: ganti dengan karya aslimu ============
    Isi `image` dengan path foto. `ratio` = rasio asli foto (lebar/tinggi). */
 const ITEMS = [
-  { id: "w1", title: "Jakarta Pagi", cat: "foto", year: "2026", ratio: "4/5", desc: "Kabut tipis dan lampu jalan yang belum padam, beberapa menit sebelum kota ramai.", meta: "ƒ/2.8, 1/250, ISO 200", a: "#9a8080", b: "#37353E" },
-  { id: "w2", title: "Skin Fade", cat: "barber", year: "2026", ratio: "1/1", desc: "Gradasi halus dari kulit ke rambut, dirapikan dengan clipper dan foil shaver.", meta: "Durasi 45 menit", a: "#37353E", b: "#D3DAD9" },
-  { id: "w3", title: "Pesisir", cat: "foto", year: "2025", ratio: "3/2", desc: "Eksposur panjang menyusuri pantai saat golden hour.", meta: "ƒ/11, 4s, ISO 100", a: "#715A5A", b: "#44444E" },
-  { id: "w4", title: "Wajah Kota", cat: "foto", year: "2025", ratio: "2/3", desc: "Potret orang-orang yang ditemui di sudut kota dengan cahaya sekitar apa adanya.", meta: "ƒ/1.8, 1/320, ISO 100", a: "#37353E", b: "#D3DAD9" },
-  { id: "w5", title: "Textured Crop", cat: "barber", year: "2025", ratio: "4/5", desc: "Potongan pendek bertekstur di bagian atas dengan sisi yang bersih.", meta: "Durasi 40 menit", a: "#715A5A", b: "#D3DAD9" },
-  { id: "w6", title: "Hujan di Pasar", cat: "foto", year: "2025", ratio: "3/2", desc: "Payung, plastik, dan pantulan lampu di jalan basah.", meta: "ƒ/4, 1/125, ISO 800", a: "#44444E", b: "#9a8080" },
-  { id: "w7", title: "Classic Taper", cat: "barber", year: "2024", ratio: "4/5", desc: "Taper klasik dengan belahan samping yang rapi untuk tampilan formal.", meta: "Durasi 35 menit", a: "#44444E", b: "#D3DAD9" },
-  { id: "w8", title: "Siluet", cat: "foto", year: "2024", ratio: "1/1", desc: "Bayangan panjang di dinding tua saat matahari rendah.", meta: "ƒ/8, 1/500, ISO 100", a: "#D3DAD9", b: "#715A5A" },
-  { id: "w9", title: "Stasiun Senja", cat: "foto", year: "2024", ratio: "3/2", desc: "Menunggu kereta di peron yang mulai kosong.", meta: "ƒ/2, 1/60, ISO 400", a: "#715A5A", b: "#37353E" },
+  { id: "w1", title: "Jakarta Pagi", cat: "foto", year: "2026", ratio: "4/5", desc: "Kabut tipis dan lampu jalan yang belum padam, beberapa menit sebelum kota ramai.", meta: "ƒ/2.8, 1/250, ISO 200", a: "#E58FA8", b: "#2C2C2C" },
+  { id: "w2", title: "Skin Fade", cat: "barber", year: "2026", ratio: "1/1", desc: "Gradasi halus dari kulit ke rambut, dirapikan dengan clipper dan foil shaver.", meta: "Durasi 45 menit", a: "#2C2C2C", b: "#F3F4F4" },
+  { id: "w3", title: "Pesisir", cat: "foto", year: "2025", ratio: "3/2", desc: "Eksposur panjang menyusuri pantai saat golden hour.", meta: "ƒ/11, 4s, ISO 100", a: "#853953", b: "#2C2C2C" },
+  { id: "w4", title: "Wajah Kota", cat: "foto", year: "2025", ratio: "2/3", desc: "Potret orang-orang yang ditemui di sudut kota dengan cahaya sekitar apa adanya.", meta: "ƒ/1.8, 1/320, ISO 100", a: "#612D53", b: "#F3F4F4" },
+  { id: "w5", title: "Textured Crop", cat: "barber", year: "2025", ratio: "4/5", desc: "Potongan pendek bertekstur di bagian atas dengan sisi yang bersih.", meta: "Durasi 40 menit", a: "#612D53", b: "#E58FA8" },
+  { id: "w6", title: "Hujan di Pasar", cat: "foto", year: "2025", ratio: "3/2", desc: "Payung, plastik, dan pantulan lampu di jalan basah.", meta: "ƒ/4, 1/125, ISO 800", a: "#2C2C2C", b: "#853953" },
+  { id: "w7", title: "Classic Taper", cat: "barber", year: "2024", ratio: "4/5", desc: "Taper klasik dengan belahan samping yang rapi untuk tampilan formal.", meta: "Durasi 35 menit", a: "#1F1F1F", b: "#E58FA8" },
+  { id: "w8", title: "Siluet", cat: "foto", year: "2024", ratio: "1/1", desc: "Bayangan panjang di dinding tua saat matahari rendah.", meta: "ƒ/8, 1/500, ISO 100", a: "#F3F4F4", b: "#853953" },
+  { id: "w9", title: "Stasiun Senja", cat: "foto", year: "2024", ratio: "3/2", desc: "Menunggu kereta di peron yang mulai kosong.", meta: "ƒ/2, 1/60, ISO 400", a: "#853953", b: "#612D53" },
 ];
 
 /* Tata letak kolase. Dipakai berulang (siklus 6), jadi filter apa pun tetap terlihat seperti kolase.
    c = posisi kolom (HP 6 kolom, desktop 12 kolom), m = margin untuk saling menimpa,
    r = kemiringan (derajat), t = jenis selotip, sp = jarak parallax (px), paper = warna kertas. */
 const LAYOUT = [
-  { c: "col-start-1 col-span-4 md:col-start-1 md:col-span-5", m: "", r: -3, t: "top", sp: 30, paper: "#D3DAD9" },
-  { c: "col-start-3 col-span-4 md:col-start-6 md:col-span-4 md:-ml-10", m: "-mt-10 md:mt-16", r: 3, t: "corner", sp: -40, paper: "#e4dcd8" },
-  { c: "col-start-2 col-span-4 md:col-start-10 md:col-span-3 md:-ml-8", m: "-mt-8 md:mt-6", r: -2, t: "top", sp: 20, paper: "#D3DAD9" },
-  { c: "col-start-1 col-span-4 md:col-start-1 md:col-span-3", m: "-mt-8 md:-mt-10", r: 2.5, t: "corner", sp: -20, paper: "#e4dcd8" },
-  { c: "col-start-3 col-span-4 md:col-start-4 md:col-span-5 md:-ml-6", m: "-mt-10 md:mt-14", r: -3.5, t: "top", sp: 35, paper: "#D3DAD9" },
-  { c: "col-start-2 col-span-4 md:col-start-9 md:col-span-4 md:-ml-8", m: "-mt-8 md:mt-4", r: 2, t: "corner", sp: -25, paper: "#e4dcd8" },
+  { c: "col-start-1 col-span-4 md:col-start-1 md:col-span-5", m: "", r: -3, t: "top", sp: 30, paper: "#F3F4F4" },
+  { c: "col-start-3 col-span-4 md:col-start-6 md:col-span-4 md:-ml-10", m: "-mt-10 md:mt-16", r: 3, t: "corner", sp: -40, paper: "#E9E3E7" },
+  { c: "col-start-2 col-span-4 md:col-start-10 md:col-span-3 md:-ml-8", m: "-mt-8 md:mt-6", r: -2, t: "top", sp: 20, paper: "#F3F4F4" },
+  { c: "col-start-1 col-span-4 md:col-start-1 md:col-span-3", m: "-mt-8 md:-mt-10", r: 2.5, t: "corner", sp: -20, paper: "#E9E3E7" },
+  { c: "col-start-3 col-span-4 md:col-start-4 md:col-span-5 md:-ml-6", m: "-mt-10 md:mt-14", r: -3.5, t: "top", sp: 35, paper: "#F3F4F4" },
+  { c: "col-start-2 col-span-4 md:col-start-9 md:col-span-4 md:-ml-8", m: "-mt-8 md:mt-4", r: 2, t: "corner", sp: -25, paper: "#E9E3E7" },
 ];
 
 const FILTERS = [
@@ -49,7 +56,7 @@ function Art({ p }) {
       {p.image ? (
         <img src={p.image} alt={p.title} className="absolute inset-0 h-full w-full object-cover" />
       ) : (
-        <span className={`${DISPLAY} select-none text-6xl font-extrabold leading-none text-[#37353E]/30 md:text-8xl`}>{p.title[0]}</span>
+        <span className={`${DISPLAY} select-none text-6xl font-extrabold leading-none text-[#F3F4F4]/30 md:text-8xl`}>{p.title[0]}</span>
       )}
     </div>
   );
@@ -57,7 +64,7 @@ function Art({ p }) {
 
 function Tape({ kind }) {
   const pos = kind === "top" ? "-top-3 left-1/2 -translate-x-1/2 -rotate-3" : "-left-5 -top-1 -rotate-[38deg]";
-  return <span aria-hidden="true" className={`pointer-events-none absolute z-10 h-6 w-20 bg-[#715A5A]/65 shadow-sm ${pos}`} />;
+  return <span aria-hidden="true" className={`pointer-events-none absolute z-10 h-6 w-20 bg-[#E58FA8]/70 shadow-sm backdrop-blur-[1px] ${pos}`} />;
 }
 
 export default function CreativeWorks() {
@@ -92,6 +99,10 @@ export default function CreativeWorks() {
               { opacity: 1, scale: 1, rotation: 0, duration: 0.8, ease: "back.out(1.6)", stagger: 0.1, clearProps: "transform,opacity" },
             ),
         });
+
+        // Cahaya latar bergerak berlawanan arah saat scroll
+        gsap.to(".cw-glow-a", { yPercent: -30, ease: "none", scrollTrigger: { trigger: root.current, start: "top bottom", end: "bottom top", scrub: true } });
+        gsap.to(".cw-glow-b", { yPercent: 30, ease: "none", scrollTrigger: { trigger: root.current, start: "top bottom", end: "bottom top", scrub: true } });
       });
 
       // Tiap foto bergeser dengan kecepatan berbeda supaya tumpukannya terasa berlapis
@@ -181,16 +192,19 @@ export default function CreativeWorks() {
   const ratio = item ? toRatio(item.ratio) : 1;
 
   return (
-    <section ref={root} id="gallery" className="relative overflow-clip bg-[#2f2d35] px-6 py-20 text-[#D3DAD9] md:px-12 md:py-28 lg:px-20">
-      <div className="mx-auto max-w-7xl">
+    <section ref={root} id="gallery" className="relative overflow-clip bg-gradient-to-b from-[#612D53] to-[#2C2C2C] px-6 py-20 text-[#F3F4F4] md:px-12 md:py-28 lg:px-20">
+      {/* Cahaya latar */}
+      <div aria-hidden="true" className="cw-glow-a pointer-events-none absolute -left-40 top-1/4 h-112 w-md rounded-full bg-[#612D53]/40 blur-[120px]" />
+      <div aria-hidden="true" className="cw-glow-b pointer-events-none absolute -right-40 bottom-1/4 h-112 w-md rounded-full bg-[#853953]/25 blur-[120px]" />
+
+      <div className="relative mx-auto max-w-7xl">
         <header className="cw-head mb-14 flex flex-col gap-8 md:mb-20 md:flex-row md:items-end md:justify-between">
           <h2 className={`${DISPLAY} text-5xl font-extrabold leading-[0.95] tracking-[-0.03em] md:text-7xl`}>
-            <span className="block overflow-hidden pb-2">
-              <span className="cw-line block">Creative</span>
-            </span>
-            <span className="block overflow-hidden pb-2">
-              <span className="cw-line block font-light italic text-[#D3DAD9]/80">Works</span>
-            </span>
+            {["Creative", "Works"].map((line) => (
+              <span key={line} className="block overflow-hidden pb-2">
+                <span className="cw-line block">{line}</span>
+              </span>
+            ))}
           </h2>
 
           <div>
@@ -204,14 +218,14 @@ export default function CreativeWorks() {
                     type="button"
                     aria-pressed={on}
                     onClick={() => setFilter(f.id)}
-                    className={`rounded-full border px-5 py-2 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D3DAD9] ${on ? "border-[#D3DAD9] bg-[#D3DAD9] text-[#37353E]" : "border-[#D3DAD9]/30 hover:bg-[#715A5A]"}`}
+                    className={`rounded-full border px-5 py-2 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E58FA8] ${on ? "border-[#F3F4F4] bg-[#F3F4F4] text-[#2C2C2C]" : "border-[#F3F4F4]/30 hover:border-[#853953] hover:bg-[#853953]"}`}
                   >
                     {f.label} <span className="tabular-nums opacity-60">{n}</span>
                   </button>
                 );
               })}
             </div>
-            <p className="mt-4 text-sm text-[#D3DAD9]/60">Klik foto untuk memperbesar.</p>
+            <p className="mt-4 text-sm text-[#F3F4F4]/70">Klik foto untuk memperbesar.</p>
           </div>
         </header>
 
@@ -227,17 +241,17 @@ export default function CreativeWorks() {
                     type="button"
                     onClick={() => setLb(i)}
                     aria-label={`Perbesar ${it.title}`}
-                    className="group relative block w-full text-left transition-transform duration-500 [transform:rotate(var(--r))] hover:[transform:rotate(0deg)_scale(1.04)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D3DAD9] focus-visible:[transform:rotate(0deg)_scale(1.04)]"
+                    className="group relative block w-full text-left transition-transform duration-500 [transform:rotate(var(--r))] hover:[transform:rotate(0deg)_scale(1.04)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#E58FA8] focus-visible:[transform:rotate(0deg)_scale(1.04)]"
                     style={{ "--r": `${L.r}deg` }}
                   >
                     <Tape kind={L.t} />
-                    <div className="p-2 shadow-[0_22px_38px_-14px_rgba(0,0,0,0.65)] md:p-3" style={{ background: L.paper }}>
+                    <div className="p-2 shadow-[0_22px_38px_-14px_rgba(0,0,0,0.75)] md:p-3" style={{ background: L.paper }}>
                       <div data-art={it.id} className="overflow-hidden" style={{ aspectRatio: it.ratio }}>
                         <Art p={it} />
                       </div>
-                      <div className="mt-2 flex items-baseline justify-between gap-2 text-[#37353E] md:mt-3">
+                      <div className="mt-2 flex items-baseline justify-between gap-2 text-[#2C2C2C] md:mt-3">
                         <span className={`${DISPLAY} text-sm font-semibold md:text-base`}>{it.title}</span>
-                        <span className="shrink-0 text-xs text-[#37353E]/60">
+                        <span className="shrink-0 text-xs text-[#2C2C2C]/70">
                           {CAT_LABEL[it.cat]}, {it.year}
                         </span>
                       </div>
@@ -254,8 +268,8 @@ export default function CreativeWorks() {
       {item &&
         createPortal(
           <div role="dialog" aria-modal="true" aria-label={item.title} className="fixed inset-0 z-[70]">
-            <div className="lb-bg absolute inset-0 bg-[#1f1e24]/95 backdrop-blur-sm" onClick={closeLb} />
-            <button type="button" onClick={closeLb} className={`lb-ui absolute right-5 top-5 z-10 rounded-full border border-[#D3DAD9]/30 px-4 py-2 text-sm text-[#D3DAD9] transition hover:bg-[#D3DAD9] hover:text-[#37353E] ${DISPLAY}`}>
+            <div className="lb-bg absolute inset-0 bg-[#1F1F1F]/95 backdrop-blur-sm" onClick={closeLb} />
+            <button type="button" onClick={closeLb} className={`lb-ui absolute right-5 top-5 z-10 rounded-full border border-[#F3F4F4]/35 px-4 py-2 text-sm text-[#F3F4F4] transition hover:bg-[#F3F4F4] hover:text-[#2C2C2C] ${DISPLAY}`}>
               Tutup (Esc)
             </button>
 
@@ -268,26 +282,28 @@ export default function CreativeWorks() {
                 <Art p={item} />
               </div>
 
-              <div className="lb-cap pointer-events-auto max-w-sm text-[#D3DAD9]">
-                <p className="text-sm text-[#D3DAD9]/60">
+              <div className="lb-cap pointer-events-auto max-w-sm text-[#F3F4F4]">
+                <span className="inline-block rounded-full bg-[#853953] px-3.5 py-1 text-xs font-semibold">
                   {CAT_LABEL[item.cat]}, {item.year}
-                </p>
-                <h3 className={`mt-2 ${DISPLAY} text-5xl font-extrabold leading-none tracking-[-0.03em] md:text-6xl`}>{item.title}</h3>
-                <p className="mt-5 text-lg leading-relaxed text-[#D3DAD9]/80">{item.desc}</p>
-                <p className="mt-5 tabular-nums text-[#D3DAD9]/70">{item.meta}</p>
+                </span>
+                <h3 className={`mt-4 ${DISPLAY} text-5xl font-extrabold leading-none tracking-[-0.03em] md:text-6xl`}>{item.title}</h3>
+                <p className="mt-5 text-lg leading-relaxed text-[#F3F4F4]/85">{item.desc}</p>
+                <p className="mt-5 tabular-nums text-[#E58FA8]">{item.meta}</p>
               </div>
             </div>
 
-            <div className={`lb-ui absolute inset-x-0 bottom-5 z-10 flex items-center justify-center gap-4 text-sm text-[#D3DAD9] ${DISPLAY}`}>
-              <button type="button" onClick={() => go(-1)} className="rounded-full border border-[#D3DAD9]/30 px-4 py-2 transition hover:bg-[#D3DAD9] hover:text-[#37353E]">
-                Sebelumnya
-              </button>
-              <span className="w-16 text-center tabular-nums text-[#D3DAD9]/70">
-                {pad(lb + 1)} / {pad(visible.length)}
-              </span>
-              <button type="button" onClick={() => go(1)} className="rounded-full border border-[#D3DAD9]/30 px-4 py-2 transition hover:bg-[#D3DAD9] hover:text-[#37353E]">
-                Berikutnya
-              </button>
+            <div className={`lb-ui absolute inset-x-0 bottom-5 z-10 flex items-center justify-center ${DISPLAY}`}>
+              <div className="flex items-center gap-2 rounded-full border border-[#F3F4F4]/15 bg-[#F3F4F4]/10 p-1.5 text-sm text-[#F3F4F4] backdrop-blur-md">
+                <button type="button" onClick={() => go(-1)} className="rounded-full px-4 py-2 transition hover:bg-[#F3F4F4] hover:text-[#2C2C2C]">
+                  Sebelumnya
+                </button>
+                <span className="w-16 text-center tabular-nums text-[#F3F4F4]/80">
+                  {pad(lb + 1)} / {pad(visible.length)}
+                </span>
+                <button type="button" onClick={() => go(1)} className="rounded-full px-4 py-2 transition hover:bg-[#F3F4F4] hover:text-[#2C2C2C]">
+                  Berikutnya
+                </button>
+              </div>
             </div>
           </div>,
           document.body,

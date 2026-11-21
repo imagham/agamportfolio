@@ -18,6 +18,11 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
     2. Fotomu (cutout)             -> menutupi kata di belakangnya
     3. Kata yang sama, hanya garis -> hanya muncul di tengah, "menembus" wajahmu
 
+  PALET: latar charcoal #2C2C2C dengan cahaya plum #612D53 di belakang foto
+         kata solid #F3F4F4 · garis, tagline, dan titik status rose muda #E58FA8
+         tombol utama putih (hover rose muda) · bagian bawah memudar ke #2C2C2C
+         (sama dengan latar About yang menimpa Hero)
+
   PENYETELAN: kalau kata terasa terlalu tinggi/rendah terhadap wajahmu, ubah WORD_TOP dan PORTRAIT_H.
 */
 const WORD = "IMAGHAM";
@@ -26,14 +31,14 @@ const PORTRAIT_H = 92; // tinggi foto relatif terhadap hero (%)
 
 const BIG = "font-['Anton',Impact,'Arial_Narrow',sans-serif]";
 const BODY = "font-['Plus_Jakarta_Sans',system-ui,sans-serif]";
-const ACCENT = "#FFC857";
-const SILVER = "#D3DAD9";
+const ACCENT = "#E58FA8";
+const SILVER = "#F3F4F4";
 
 const TAGLINE = "Where Technology Meets Creativity.";
 const TEXT = "A Software Engineer, Barber, and Photographer driven by curiosity and the passion to create meaningful things.";
 const ROLES = ["Software Engineer", "Barber", "Photographer"];
 
-const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D3DAD9]";
+const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F3F4F4]";
 
 const GRAIN = `url("data:image/svg+xml,${encodeURIComponent(
   "<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(#n)'/></svg>",
@@ -76,8 +81,8 @@ function Silhouette() {
     <svg viewBox="0 0 400 500" aria-hidden="true" className="absolute bottom-0 left-1/2 h-[88%] -translate-x-1/2">
       <defs>
         <linearGradient id="sil" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#715A5A" />
-          <stop offset="1" stopColor="#44444E" />
+          <stop offset="0" stopColor="#853953" />
+          <stop offset="1" stopColor="#612D53" />
         </linearGradient>
       </defs>
       <circle cx="200" cy="150" r="74" fill="url(#sil)" />
@@ -204,14 +209,14 @@ export default function Hero() {
   return (
     <main
       ref={heroRef}
-      className={`relative min-h-[100svh] overflow-hidden bg-[radial-gradient(ellipse_at_50%_38%,#44444E_0%,#2a282f_68%)] text-[#D3DAD9] ${BODY}`}
+      className={`relative min-h-[100svh] overflow-hidden bg-[radial-gradient(ellipse_at_50%_38%,#612D53_0%,#2C2C2C_68%)] text-[#F3F4F4] ${BODY}`}
     >
       <h1 className="sr-only">Imagham: Software Engineer, Barber, and Photographer</h1>
 
       {/* Latar: spotlight kursor + grain film */}
       <div
         aria-hidden="true"
-        className="spot pointer-events-none absolute left-0 top-0 z-0 size-[38rem] rounded-full bg-[radial-gradient(circle,rgba(255,200,87,0.12),transparent_65%)] opacity-0"
+        className="spot pointer-events-none absolute left-0 top-0 z-0 size-[38rem] rounded-full bg-[radial-gradient(circle,rgba(229,143,168,0.16),transparent_65%)] opacity-0"
       />
 
       {/* LAPIS 1: kata raksasa solid (paling belakang) */}
@@ -250,8 +255,8 @@ export default function Hero() {
         <BigWord outline />
       </div>
 
-      {/* Gradasi bawah agar teks tetap terbaca di atas badan foto */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[38%] bg-gradient-to-t from-[#2a282f] via-[#2a282f]/70 to-transparent" />
+      {/* Gradasi bawah agar teks tetap terbaca di atas badan foto; ujungnya sama dengan latar About */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[38%] bg-gradient-to-t from-[#2C2C2C] via-[#2C2C2C]/70 to-transparent" />
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-[25] opacity-[0.07] mix-blend-overlay"
@@ -262,8 +267,8 @@ export default function Hero() {
       <header className="topbar absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-4 px-5 py-6 md:px-10 lg:px-16">
         <div className="flex items-center gap-3 text-sm">
           <span aria-hidden="true" className="relative flex size-2.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#7EE0A1] opacity-60 motion-reduce:animate-none" />
-            <span className="relative inline-flex size-2.5 rounded-full bg-[#7EE0A1]" />
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#E58FA8] opacity-60 motion-reduce:animate-none" />
+            <span className="relative inline-flex size-2.5 rounded-full bg-[#E58FA8]" />
           </span>
           <span className="sr-only">{ROLES.join(", ")}. Open for freelance projects.</span>
           <span aria-hidden="true" className="block h-6 overflow-hidden font-semibold">
@@ -275,13 +280,13 @@ export default function Hero() {
           </span>
         </div>
 
-        <nav aria-label="Utama" className="hidden items-center gap-9 text-sm font-medium text-[#D3DAD9]/75 md:flex">
+        <nav aria-label="Utama" className="hidden items-center gap-9 text-sm font-medium text-[#F3F4F4]/80 md:flex">
           {[
             ["About", "#about"],
             ["Works", "#works"],
             ["Gallery", "#gallery"],
           ].map(([label, href]) => (
-            <a key={label} href={href} className={`transition-colors hover:text-[#D3DAD9] ${focusRing}`}>
+            <a key={label} href={href} className={`transition-colors hover:text-[#E58FA8] ${focusRing}`}>
               {label}
             </a>
           ))}
@@ -289,7 +294,7 @@ export default function Hero() {
 
         <a href="#contact" className={`magnet group flex items-center gap-3 text-sm font-semibold ${focusRing}`}>
           Let's talk
-          <LongArrow className="w-12 transition-transform duration-300 group-hover:translate-x-1.5 md:w-16" />
+          <LongArrow className="w-12 text-[#E58FA8] transition-transform duration-300 group-hover:translate-x-1.5 md:w-16" />
         </a>
       </header>
 
@@ -297,18 +302,18 @@ export default function Hero() {
       <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col items-start justify-between gap-5 px-5 pb-7 md:flex-row md:items-end md:px-10 lg:px-16">
         <div className="fade-in max-w-xs">
           <p className="text-base font-bold" style={{ color: ACCENT }}>{TAGLINE}</p>
-          <p className="mt-2 text-sm leading-relaxed text-[#D3DAD9]/75">{TEXT}</p>
+          <p className="mt-2 text-sm leading-relaxed text-[#F3F4F4]/80">{TEXT}</p>
         </div>
         <div className="fade-in flex flex-wrap gap-3">
           <a
             href="#works"
-            className={`magnet rounded-full bg-[#D3DAD9] px-7 py-3.5 text-sm font-semibold text-[#37353E] transition-colors hover:bg-white ${focusRing}`}
+            className={`magnet rounded-full bg-[#F3F4F4] px-7 py-3.5 text-sm font-semibold text-[#2C2C2C] transition-colors hover:bg-[#E58FA8] ${focusRing}`}
           >
             View works
           </a>
           <a
             href="#about"
-            className={`magnet rounded-full border border-[#D3DAD9]/35 px-7 py-3.5 text-sm font-semibold backdrop-blur transition-colors hover:border-[#D3DAD9] ${focusRing}`}
+            className={`magnet rounded-full border border-[#F3F4F4]/40 px-7 py-3.5 text-sm font-semibold backdrop-blur transition-colors hover:border-[#F3F4F4] hover:bg-[#F3F4F4]/10 ${focusRing}`}
           >
             About me
           </a>
