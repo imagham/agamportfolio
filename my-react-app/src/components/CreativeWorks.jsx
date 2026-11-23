@@ -4,6 +4,19 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 
+/* Foto dari src/assets (nama file harus persis sama, termasuk huruf besar-kecil) */
+import street from "../assets/street.jpg";
+import night from "../assets/night.jpg";
+import tower from "../assets/tower.jpg";
+import blur from "../assets/blur.jpg";
+import stadion from "../assets/stadion.jpg";
+import stadion2 from "../assets/stadion2.jpg";
+import unj1 from "../assets/UNJ1.jpg";
+import unj2 from "../assets/UNJ2.jpg";
+import unj3 from "../assets/UNJ3.jpg";
+import rumah from "../assets/RUMAH.jpg";
+import rumahair from "../assets/rumahair.jpg";
+
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 const DISPLAY = "font-['Bricolage_Grotesque',system-ui,sans-serif]";
@@ -15,18 +28,21 @@ const DISPLAY = "font-['Bricolage_Grotesque',system-ui,sans-serif]";
   Hover filter: rose #853953 (teks putih, kontras 7.0)
 */
 
-/* ============ DATA: ganti dengan karya aslimu ============
-   Isi `image` dengan path foto. `ratio` = rasio asli foto (lebar/tinggi). */
+/* ============ DATA: ganti judul, tahun, dan deskripsi sesuai fotomu ============
+   image = foto dari src/assets. Rasio foto dibaca otomatis saat dimuat, jadi `ratio` hanya
+   cadangan sebelum foto selesai dimuat. cat: "foto" atau "barber". Kosongkan `meta` bila tidak perlu. */
 const ITEMS = [
-  { id: "w1", title: "Jakarta Pagi", cat: "foto", year: "2026", ratio: "4/5", desc: "Kabut tipis dan lampu jalan yang belum padam, beberapa menit sebelum kota ramai.", meta: "ƒ/2.8, 1/250, ISO 200", a: "#E58FA8", b: "#2C2C2C" },
-  { id: "w2", title: "Skin Fade", cat: "barber", year: "2026", ratio: "1/1", desc: "Gradasi halus dari kulit ke rambut, dirapikan dengan clipper dan foil shaver.", meta: "Durasi 45 menit", a: "#2C2C2C", b: "#F3F4F4" },
-  { id: "w3", title: "Pesisir", cat: "foto", year: "2025", ratio: "3/2", desc: "Eksposur panjang menyusuri pantai saat golden hour.", meta: "ƒ/11, 4s, ISO 100", a: "#853953", b: "#2C2C2C" },
-  { id: "w4", title: "Wajah Kota", cat: "foto", year: "2025", ratio: "2/3", desc: "Potret orang-orang yang ditemui di sudut kota dengan cahaya sekitar apa adanya.", meta: "ƒ/1.8, 1/320, ISO 100", a: "#612D53", b: "#F3F4F4" },
-  { id: "w5", title: "Textured Crop", cat: "barber", year: "2025", ratio: "4/5", desc: "Potongan pendek bertekstur di bagian atas dengan sisi yang bersih.", meta: "Durasi 40 menit", a: "#612D53", b: "#E58FA8" },
-  { id: "w6", title: "Hujan di Pasar", cat: "foto", year: "2025", ratio: "3/2", desc: "Payung, plastik, dan pantulan lampu di jalan basah.", meta: "ƒ/4, 1/125, ISO 800", a: "#2C2C2C", b: "#853953" },
-  { id: "w7", title: "Classic Taper", cat: "barber", year: "2024", ratio: "4/5", desc: "Taper klasik dengan belahan samping yang rapi untuk tampilan formal.", meta: "Durasi 35 menit", a: "#1F1F1F", b: "#E58FA8" },
-  { id: "w8", title: "Siluet", cat: "foto", year: "2024", ratio: "1/1", desc: "Bayangan panjang di dinding tua saat matahari rendah.", meta: "ƒ/8, 1/500, ISO 100", a: "#F3F4F4", b: "#853953" },
-  { id: "w9", title: "Stasiun Senja", cat: "foto", year: "2024", ratio: "3/2", desc: "Menunggu kereta di peron yang mulai kosong.", meta: "ƒ/2, 1/60, ISO 400", a: "#853953", b: "#612D53" },
+  { id: "w1", title: "Riuh Jalanan", cat: "foto", year: "2026", ratio: "4/5", image: street, desc: "Potret kehidupan jalan, direkam apa adanya.", meta: "", a: "#E58FA8", b: "#2C2C2C" },
+  { id: "w2", title: "Garis yang Bersih", cat: "barber", year: "2026", ratio: "1/1", image: rumahair, desc: "Potongan rapi dengan detail yang dikerjakan presisi.", meta: "Rumah Hair", a: "#2C2C2C", b: "#F3F4F4" },
+  { id: "w3", title: "Menjulang", cat: "foto", year: "2026", ratio: "2/3", image: tower, desc: "Menara yang berdiri tegak di antara langit dan kota.", meta: "", a: "#853953", b: "#2C2C2C" },
+  { id: "w4", title: "Arena", cat: "foto", year: "2026", ratio: "3/2", image: stadion, desc: "Skala dan ruang sebuah stadion dalam satu bingkai.", meta: "Seri Arena, 1 dari 2", a: "#612D53", b: "#F3F4F4" },
+  { id: "w5", title: "Kampus, I", cat: "foto", year: "2026", ratio: "3/2", image: unj1, desc: "Seri kampus Universitas Negeri Jakarta, bab pertama.", meta: "Seri Kampus, 1 dari 3", a: "#612D53", b: "#E58FA8" },
+  { id: "w6", title: "Rapi di Setiap Sisi", cat: "barber", year: "2026", ratio: "4/5", image: rumah, desc: "Kerapian yang terlihat dari setiap sudut kepala.", meta: "Rumah Hair", a: "#1F1F1F", b: "#E58FA8" },
+  { id: "w7", title: "Setelah Gelap", cat: "foto", year: "2026", ratio: "3/2", image: night, desc: "Cahaya kota ketika malam mengambil alih.", meta: "", a: "#2C2C2C", b: "#853953" },
+  { id: "w8", title: "Fokus yang Hilang", cat: "foto", year: "2026", ratio: "1/1", image: blur, desc: "Eksperimen cahaya dan fokus yang sengaja dibuat kabur.", meta: "", a: "#F3F4F4", b: "#853953" },
+  { id: "w9", title: "Arena, II", cat: "foto", year: "2026", ratio: "4/5", image: stadion2, desc: "Bingkai kedua dari stadion yang sama.", meta: "Seri Arena, 2 dari 2", a: "#853953", b: "#612D53" },
+  { id: "w10", title: "Kampus, II", cat: "foto", year: "2026", ratio: "3/2", image: unj2, desc: "Seri kampus Universitas Negeri Jakarta, bab kedua.", meta: "Seri Kampus, 2 dari 3", a: "#612D53", b: "#2C2C2C" },
+  { id: "w11", title: "Kampus, III", cat: "foto", year: "2026", ratio: "4/5", image: unj3, desc: "Seri kampus Universitas Negeri Jakarta, bab penutup.", meta: "Seri Kampus, 3 dari 3", a: "#E58FA8", b: "#612D53" },
 ];
 
 /* Tata letak kolase. Dipakai berulang (siklus 6), jadi filter apa pun tetap terlihat seperti kolase.
@@ -48,13 +64,14 @@ const FILTERS = [
 ];
 const CAT_LABEL = { foto: "Fotografi", barber: "Barbering" };
 const pad = (n) => String(n).padStart(2, "0");
-const toRatio = (r) => r.split("/").reduce((a, b) => a / b);
+const toRatio = (r) => (typeof r === "number" ? r : r.split("/").reduce((a, b) => a / b));
+const clampRatio = (r) => Math.min(2, Math.max(0.66, r));
 
 function Art({ p }) {
   return (
     <div className="relative grid h-full w-full place-items-center overflow-hidden" style={{ background: `linear-gradient(135deg, ${p.a}, ${p.b})` }}>
       {p.image ? (
-        <img src={p.image} alt={p.title} className="absolute inset-0 h-full w-full object-cover" />
+        <img src={p.image} alt={p.title} decoding="async" className="absolute inset-0 h-full w-full object-cover" />
       ) : (
         <span className={`${DISPLAY} select-none text-6xl font-extrabold leading-none text-[#F3F4F4]/30 md:text-8xl`}>{p.title[0]}</span>
       )}
@@ -75,6 +92,31 @@ export default function CreativeWorks() {
   const closing = useRef(false);
   const [filter, setFilter] = useState("all");
   const [lb, setLb] = useState(null); // index di dalam daftar `visible`
+  const [ratios, setRatios] = useState({}); // rasio asli foto, dibaca saat dimuat
+  const ratioOf = (it) => ratios[it.id] ?? toRatio(it.ratio);
+
+  useEffect(() => {
+    let alive = true;
+    Promise.all(
+      ITEMS.filter((i) => i.image).map(
+        (i) =>
+          new Promise((res) => {
+            const im = new Image();
+            im.onload = () => res([i.id, clampRatio(im.naturalWidth / im.naturalHeight)]);
+            im.onerror = () => res(null);
+            im.src = i.image;
+          }),
+      ),
+    ).then((list) => alive && setRatios(Object.fromEntries(list.filter(Boolean))));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Setelah rasio foto berubah, posisi trigger scroll perlu dihitung ulang
+  useEffect(() => {
+    if (Object.keys(ratios).length) ScrollTrigger.refresh();
+  }, [ratios]);
 
   const visible = ITEMS.filter((i) => filter === "all" || i.cat === filter);
   const item = lb !== null ? visible[lb] : null;
@@ -189,10 +231,10 @@ export default function CreativeWorks() {
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const ratio = item ? toRatio(item.ratio) : 1;
+  const ratio = item ? ratioOf(item) : 1;
 
   return (
-    <section ref={root} id="gallery" className="relative overflow-clip bg-gradient-to-b from-[#612D53] to-[#2C2C2C] px-6 py-20 text-[#F3F4F4] md:px-12 md:py-28 lg:px-20">
+    <section ref={root} id="gallery" className="relative overflow-clip bg-linear-to-b from-[#612D53] to-[#1F1F1F] px-6 py-20 text-[#F3F4F4] md:px-12 md:py-28 lg:px-20">
       {/* Cahaya latar */}
       <div aria-hidden="true" className="cw-glow-a pointer-events-none absolute -left-40 top-1/4 h-112 w-md rounded-full bg-[#612D53]/40 blur-[120px]" />
       <div aria-hidden="true" className="cw-glow-b pointer-events-none absolute -right-40 bottom-1/4 h-112 w-md rounded-full bg-[#853953]/25 blur-[120px]" />
@@ -246,7 +288,7 @@ export default function CreativeWorks() {
                   >
                     <Tape kind={L.t} />
                     <div className="p-2 shadow-[0_22px_38px_-14px_rgba(0,0,0,0.75)] md:p-3" style={{ background: L.paper }}>
-                      <div data-art={it.id} className="overflow-hidden" style={{ aspectRatio: it.ratio }}>
+                      <div data-art={it.id} className="overflow-hidden" style={{ aspectRatio: ratioOf(it) }}>
                         <Art p={it} />
                       </div>
                       <div className="mt-2 flex items-baseline justify-between gap-2 text-[#2C2C2C] md:mt-3">
@@ -277,7 +319,7 @@ export default function CreativeWorks() {
               <div
                 ref={artRef}
                 className="lb-art pointer-events-auto shrink-0 overflow-hidden shadow-[0_30px_60px_-20px_rgba(0,0,0,0.8)]"
-                style={{ aspectRatio: item.ratio, height: `min(66vh, calc(min(84vw, 680px) / ${ratio}))` }}
+                style={{ aspectRatio: ratioOf(item), height: `min(66vh, calc(min(84vw, 680px) / ${ratio}))` }}
               >
                 <Art p={item} />
               </div>
@@ -288,7 +330,7 @@ export default function CreativeWorks() {
                 </span>
                 <h3 className={`mt-4 ${DISPLAY} text-5xl font-extrabold leading-none tracking-[-0.03em] md:text-6xl`}>{item.title}</h3>
                 <p className="mt-5 text-lg leading-relaxed text-[#F3F4F4]/85">{item.desc}</p>
-                <p className="mt-5 tabular-nums text-[#E58FA8]">{item.meta}</p>
+                {item.meta && <p className="mt-5 tabular-nums text-[#E58FA8]">{item.meta}</p>}
               </div>
             </div>
 

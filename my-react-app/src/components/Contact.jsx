@@ -188,7 +188,7 @@ export default function Contact() {
   };
 
   return (
-    <footer ref={rootRef} id="contact" className={`relative overflow-hidden bg-[#2C2C2C] px-4 pt-4 text-[#F3F4F4] md:px-8 ${BODY}`}>
+    <footer ref={rootRef} id="contact" className={`relative overflow-hidden bg-[#1F1F1F] px-4 pt-4 text-[#F3F4F4] md:px-8 ${BODY}`}>
       {/* ---------- Panel kontak ---------- */}
       <div className="cta-block relative overflow-hidden rounded-[2rem] bg-[#853953] px-6 py-14 md:rounded-[2.5rem] md:px-12 md:py-20 lg:px-16">
         {/* Heksagon diafragma, sangat tipis */}

@@ -3,6 +3,13 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 
+/* Foto dari src/assets (nama file harus persis sama, termasuk huruf besar-kecil) */
+import street from "../assets/street.jpg";
+import night from "../assets/night.jpg";
+import streetlanscape from "../assets/streetlanscape.jpg";
+import tower from "../assets/tower.jpg";
+import jalanan from "../assets/jalanan.jpg";
+
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 // Tambahkan font ini di CSS global:
@@ -26,17 +33,18 @@ const LEAD =
 const P4 =
   "Saya selalu terbuka terhadap peluang dan kolaborasi baru. Jika kamu tertarik untuk bekerja sama atau sekadar ingin menjalin komunikasi, [[jangan ragu|untuk menghubungi|saya!]]";
 
-/* ============ FOTO: isi src dengan fotomu (mis. "/img/about-1.jpg") ============
+/* ============ FOTO: tukar file sesuai selera ============
+   Create = karya (foto dan visual), Wander = perjalanan dan tempat.
    speed = seberapa jauh foto "melayang" saat scroll (px). Beda tiap foto = terasa berlapis. */
 const PHOTOS = {
   create: [
-    { src: "", alt: "Foto hasil jepretan 1", cls: "col-span-3 aspect-[4/5]", speed: 50 },
-    { src: "", alt: "Foto hasil jepretan 2", cls: "col-span-3 aspect-[4/5] mt-10 md:mt-16", speed: -40 },
-    { src: "", alt: "Foto hasil jepretan 3", cls: "col-span-6 aspect-[21/9]", speed: 25 },
+    { src: street, alt: "Foto jalanan", cls: "col-span-3 aspect-[4/5]", speed: 50 },
+    { src: night, alt: "Foto suasana malam", cls: "col-span-3 aspect-[4/5] mt-10 md:mt-16", speed: -40 },
+    { src: streetlanscape, alt: "Foto jalanan", cls: "col-span-6 aspect-[21/9]", speed: 25 },
   ],
   wander: [
-    { src: "", alt: "Foto perjalanan 1", cls: "col-span-4 aspect-[4/3]", speed: -30 },
-    { src: "", alt: "Foto perjalanan 2", cls: "col-span-2 aspect-[2/3] -mt-10 md:-mt-20", speed: 60 },
+    { src: jalanan, alt: "Foto jalanan", cls: "col-span-4 aspect-[4/3]", speed: -30 },
+    { src: tower, alt: "Foto menara", cls: "col-span-2 aspect-[2/3] -mt-10 md:-mt-20", speed: 60 },
   ],
 };
 
