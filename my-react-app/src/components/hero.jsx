@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import { useLenis } from "lenis/react";
 import saya from "../assets/saya.png";
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
@@ -23,11 +24,14 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
          tombol utama putih (hover rose muda) · bagian bawah memudar ke #2C2C2C
          (sama dengan latar About yang menimpa Hero)
 
-  PENYETELAN: kalau kata terasa terlalu tinggi/rendah terhadap wajahmu, ubah WORD_TOP dan PORTRAIT_H.
+  PENYETELAN (nilai kiri = mobile, nilai "md:" = tablet dan desktop):
+    WORD_TOP   : posisi tengah kata dari atas hero. Naik/turunkan kalau kata tidak pas di wajah.
+    PORTRAIT_H : tinggi foto relatif terhadap hero.
+  Tulis sebagai class Tailwind utuh (jangan disusun dari potongan string) supaya terbaca Tailwind.
 */
 const WORD = "IMAGHAM";
-const WORD_TOP = 47; // posisi tengah kata dari atas hero (%)
-const PORTRAIT_H = 92; // tinggi foto relatif terhadap hero (%)
+const WORD_TOP = "top-[43%] md:top-[47%]";
+const PORTRAIT_H = "h-[80%] md:h-[92%]";
 
 const BIG = "font-['Anton',Impact,'Arial_Narrow',sans-serif]";
 const BODY = "font-['Plus_Jakarta_Sans',system-ui,sans-serif]";
@@ -37,6 +41,14 @@ const SILVER = "#F3F4F4";
 const TAGLINE = "Where Technology Meets Creativity.";
 const TEXT = "A Software Engineer, Barber, and Photographer driven by curiosity and the passion to create meaningful things.";
 const ROLES = ["Software Engineer", "Barber", "Photographer"];
+
+/* id harus sama dengan pembungkus section di LandingPage */
+const LINKS = {
+  about: "#s-about",
+  works: "#s-projects",
+  gallery: "#s-creative",
+  contact: "#s-contact",
+};
 
 const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F3F4F4]";
 
@@ -51,7 +63,7 @@ function BigWord({ outline }) {
       aria-hidden="true"
       className={`depth-word pointer-events-none flex select-none justify-center whitespace-nowrap uppercase leading-[0.82] ${BIG}`}
       style={{
-        fontSize: "clamp(7rem, min(29vw, 62vh), 40rem)",
+        fontSize: "clamp(5rem, min(29vw, 62vh), 40rem)",
         ...(outline
           ? { color: "transparent", WebkitTextStroke: `2px ${ACCENT}` }
           : { color: SILVER }),
@@ -94,6 +106,15 @@ function Silhouette() {
 export default function Hero() {
   const heroRef = useRef(null);
   const [missing, setMissing] = useState(false);
+  const lenis = useLenis();
+
+  /* Link ke section lewat Lenis, supaya scroll-nya halus dan id-nya benar */
+  const jump = (e, href) => {
+    e.preventDefault();
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (lenis) lenis.scrollTo(href, { duration: 1.2, immediate: reduce });
+    else document.querySelector(href)?.scrollIntoView({ block: "start" });
+  };
 
   useGSAP(
     () => {
@@ -122,9 +143,11 @@ export default function Hero() {
         tick.set(".ticker-list", { yPercent: 0 });
 
         /* Saat scroll: huruf menyebar dari tengah, foto membesar sedikit.
+           Jarak sebar lebih kecil di layar sempit supaya huruf tidak keluar layar.
            Memakai posisi scroll absolut (bukan trigger elemen) karena Hero bisa sticky di LandingPage. */
-        const range = { start: 0, end: () => window.innerHeight * 0.8, scrub: true };
-        gsap.to(".big-char", { x: (i, el) => (Number(el.dataset.i) - mid) * 70, ease: "none", scrollTrigger: range });
+        const spread = window.innerWidth < 768 ? 24 : 70;
+        const range = { start: 0, end: () => window.innerHeight * 0.8, scrub: true, invalidateOnRefresh: true };
+        gsap.to(".big-char", { x: (i, el) => (Number(el.dataset.i) - mid) * spread, ease: "none", scrollTrigger: range });
         gsap.to(".breathe", { scale: 1.07, transformOrigin: "50% 100%", ease: "none", scrollTrigger: range });
       });
 
@@ -213,21 +236,20 @@ export default function Hero() {
     >
       <h1 className="sr-only">Imagham: Software Engineer, Barber, and Photographer</h1>
 
-      {/* Latar: spotlight kursor + grain film */}
+      {/* Latar: spotlight kursor (hanya muncul di desktop dengan mouse) */}
       <div
         aria-hidden="true"
-        className="spot pointer-events-none absolute left-0 top-0 z-0 size-[38rem] rounded-full bg-[radial-gradient(circle,rgba(229,143,168,0.16),transparent_65%)] opacity-0"
+        className="spot pointer-events-none absolute left-0 top-0 z-0 hidden size-[38rem] rounded-full bg-[radial-gradient(circle,rgba(229,143,168,0.16),transparent_65%)] opacity-0 md:block"
       />
 
       {/* LAPIS 1: kata raksasa solid (paling belakang) */}
-      <div className="pointer-events-none absolute inset-x-0 z-[1] -translate-y-1/2" style={{ top: `${WORD_TOP}%` }}>
+      <div className={`pointer-events-none absolute inset-x-0 z-[1] -translate-y-1/2 ${WORD_TOP}`}>
         <BigWord />
       </div>
 
       {/* LAPIS 2: foto */}
       <div
-        className="pointer-events-none absolute bottom-0 left-1/2 z-10 w-[min(92vw,62rem)] -translate-x-1/2"
-        style={{ height: `${PORTRAIT_H}%` }}
+        className={`pointer-events-none absolute bottom-0 left-1/2 z-10 w-[min(100vw,62rem)] -translate-x-1/2 md:w-[min(92vw,62rem)] ${PORTRAIT_H}`}
       >
         <div className="portrait absolute inset-0 [mask-image:linear-gradient(to_top,transparent_0,black_14%)]">
           <div className="depth-face absolute inset-0">
@@ -249,22 +271,24 @@ export default function Hero() {
 
       {/* LAPIS 3: kata yang sama, hanya garis, dibatasi di tengah supaya "menembus" wajah */}
       <div
-        className="word-front pointer-events-none absolute inset-x-0 z-20 -translate-y-1/2 [mask-image:linear-gradient(90deg,transparent_32%,black_41%,black_59%,transparent_68%)]"
-        style={{ top: `${WORD_TOP}%` }}
+        className={`word-front pointer-events-none absolute inset-x-0 z-20 -translate-y-1/2 [mask-image:linear-gradient(90deg,transparent_32%,black_41%,black_59%,transparent_68%)] ${WORD_TOP}`}
       >
         <BigWord outline />
       </div>
 
-      {/* Gradasi bawah agar teks tetap terbaca di atas badan foto; ujungnya sama dengan latar About */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[38%] bg-gradient-to-t from-[#2C2C2C] via-[#2C2C2C]/70 to-transparent" />
+      {/* Gradasi bawah agar teks tetap terbaca di atas badan foto; ujungnya sama dengan latar About.
+          Lebih tinggi di mobile karena blok teks di bawah menumpuk ke atas. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[50%] bg-gradient-to-t from-[#2C2C2C] via-[#2C2C2C]/80 to-transparent md:h-[38%] md:via-[#2C2C2C]/70" />
+
+      {/* Grain film: dimatikan di mobile karena blend mode layar penuh membebani GPU */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 z-[25] opacity-[0.07] mix-blend-overlay"
+        className="pointer-events-none absolute inset-0 z-[25] hidden opacity-[0.07] mix-blend-overlay md:block"
         style={{ backgroundImage: GRAIN }}
       />
 
       {/* Bar atas */}
-      <header className="topbar absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-4 px-5 py-6 md:px-10 lg:px-16">
+      <header className="topbar absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-4 px-5 pb-4 pt-[max(1.5rem,env(safe-area-inset-top))] md:px-10 md:py-6 lg:px-16">
         <div className="flex items-center gap-3 text-sm">
           <span aria-hidden="true" className="relative flex size-2.5">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#E58FA8] opacity-60 motion-reduce:animate-none" />
@@ -282,38 +306,44 @@ export default function Hero() {
 
         <nav aria-label="Utama" className="hidden items-center gap-9 text-sm font-medium text-[#F3F4F4]/80 md:flex">
           {[
-            ["About", "#about"],
-            ["Works", "#works"],
-            ["Gallery", "#gallery"],
+            ["About", LINKS.about],
+            ["Works", LINKS.works],
+            ["Gallery", LINKS.gallery],
           ].map(([label, href]) => (
-            <a key={label} href={href} className={`transition-colors hover:text-[#E58FA8] ${focusRing}`}>
+            <a key={label} href={href} onClick={(e) => jump(e, href)} className={`transition-colors hover:text-[#E58FA8] ${focusRing}`}>
               {label}
             </a>
           ))}
         </nav>
 
-        <a href="#contact" className={`magnet group flex items-center gap-3 text-sm font-semibold ${focusRing}`}>
+        <a
+          href={LINKS.contact}
+          onClick={(e) => jump(e, LINKS.contact)}
+          className={`magnet group flex min-h-11 items-center gap-3 text-sm font-semibold ${focusRing}`}
+        >
           Let's talk
           <LongArrow className="w-12 text-[#E58FA8] transition-transform duration-300 group-hover:translate-x-1.5 md:w-16" />
         </a>
       </header>
 
       {/* Bar bawah */}
-      <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col items-start justify-between gap-5 px-5 pb-7 md:flex-row md:items-end md:px-10 lg:px-16">
+      <div className="absolute inset-x-0 bottom-0 z-30 flex flex-col items-start justify-between gap-4 px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:flex-row md:items-end md:gap-5 md:px-10 md:pb-7 lg:px-16">
         <div className="fade-in max-w-xs">
           <p className="text-base font-bold" style={{ color: ACCENT }}>{TAGLINE}</p>
-          <p className="mt-2 text-sm leading-relaxed text-[#F3F4F4]/80">{TEXT}</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-[#F3F4F4]/80 md:text-sm">{TEXT}</p>
         </div>
-        <div className="fade-in flex flex-wrap gap-3">
+        <div className="fade-in flex w-full gap-3 md:w-auto md:flex-wrap">
           <a
-            href="#works"
-            className={`magnet rounded-full bg-[#F3F4F4] px-7 py-3.5 text-sm font-semibold text-[#2C2C2C] transition-colors hover:bg-[#E58FA8] ${focusRing}`}
+            href={LINKS.works}
+            onClick={(e) => jump(e, LINKS.works)}
+            className={`magnet flex min-h-12 flex-1 items-center justify-center rounded-full bg-[#F3F4F4] px-6 text-sm font-semibold text-[#2C2C2C] transition-colors hover:bg-[#E58FA8] md:flex-none md:px-7 ${focusRing}`}
           >
             View works
           </a>
           <a
-            href="#about"
-            className={`magnet rounded-full border border-[#F3F4F4]/40 px-7 py-3.5 text-sm font-semibold backdrop-blur transition-colors hover:border-[#F3F4F4] hover:bg-[#F3F4F4]/10 ${focusRing}`}
+            href={LINKS.about}
+            onClick={(e) => jump(e, LINKS.about)}
+            className={`magnet flex min-h-12 flex-1 items-center justify-center rounded-full border border-[#F3F4F4]/40 px-6 text-sm font-semibold backdrop-blur transition-colors hover:border-[#F3F4F4] hover:bg-[#F3F4F4]/10 md:flex-none md:px-7 ${focusRing}`}
           >
             About me
           </a>

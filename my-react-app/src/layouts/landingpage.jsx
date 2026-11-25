@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import { useLenis } from "lenis/react";
 import Hero from "../components/hero.jsx";
 import About from "../components/about.jsx";
 import Aperture from "../components/aperture.jsx";
@@ -10,6 +11,8 @@ import JourneyEducation from "../components/JourneyEducation.jsx";
 import FeaturedProjects from "../components/FeaturedProjects.jsx";
 import CreativeWorks from "../components/CreativeWorks.jsx";
 import Contact from "../components/Contact.jsx";
+import SmoothScroll from "../components/SmoothScroll.jsx";
+
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 // Di mobile, address bar yang naik-turun tidak perlu memicu refresh (mencegah layout loncat)
@@ -39,7 +42,7 @@ const SECTIONS = [
   { id: "s-contact", label: "Kontak" },
 ];
 
-/* ---------- Transisi A: kata-kata berjalan berlawanan arah, miring mengikuti kecepatan scroll ---------- */
+/* ---------- Transisi A: iris membuka ---------- */
 function IrisTransition({ from }) {
   const ref = useRef(null);
 
@@ -66,19 +69,20 @@ function IrisTransition({ from }) {
   );
 
   return (
-    <div ref={ref} aria-hidden="true" className="relative h-[55vh] overflow-hidden" style={{ background: from }}>
+    <div ref={ref} aria-hidden="true" className="relative h-[40svh] overflow-hidden md:h-[55vh]" style={{ background: from }}>
       <div
         className="iris-fill absolute inset-0"
         style={{ background: "linear-gradient(to bottom, #2C2C2C, #612D53)" }}
       />
 
       <div className="pointer-events-none absolute inset-0 grid place-items-center">
-        <div className="iris-ring size-[28vw] rounded-full border border-[#D3DAD9]/30" />
+        <div className="iris-ring size-[56vw] rounded-full md:size-[28vw] border border-[#D3DAD9]/30" />
         <span className="absolute text-xs tracking-widest text-[#D3DAD9]/40">+</span>
       </div>
     </div>
   );
 }
+
 /* ---------- Transisi B: rana shutter kamera membuka, menuju proyek ---------- */
 const BLADES = 8;
 
@@ -102,7 +106,7 @@ function ShutterTransition({ from, label }) {
     <div
       ref={ref}
       aria-hidden="true"
-      className="relative grid h-[55vh] place-items-center overflow-hidden"
+      className="relative grid h-[40svh] place-items-center overflow-hidden md:h-[55vh]"
       style={{ background: "linear-gradient(to bottom, #612D53, #2C2C2C)" }}
     >
       {Array.from({ length: BLADES }, (_, i) => (
@@ -160,7 +164,7 @@ function FilmTransition() {
     <div
       ref={ref}
       aria-hidden="true"
-      className="relative h-[75vh] overflow-hidden md:h-[80vh]"
+      className="relative h-[55svh] overflow-hidden md:h-[80vh]"
       style={{ background: "linear-gradient(to bottom, #2C2C2C, #612D53)" }}
     >
       <Reel className="top-[8%] -rotate-3" dir="l" frames={[...FRAMES, ...FRAMES]} />
@@ -168,9 +172,73 @@ function FilmTransition() {
     </div>
   );
 }
+
+/* ---------- Navigasi mobile: tombol mengambang di kanan bawah, membuka daftar section ---------- */
+function MobileNav({ active, go }) {
+  const [open, setOpen] = useState(false);
+  const current = SECTIONS.find((s) => s.id === active) ?? SECTIONS[0];
+
+  const pick = (id) => {
+    setOpen(false);
+    go(id);
+  };
+
+  return (
+    <div
+      className="fixed bottom-4 right-4 z-40 md:hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
+    >
+      {open && (
+        <button
+          type="button"
+          aria-label="Tutup menu"
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 -z-10 cursor-default"
+        />
+      )}
+
+      {open && (
+        <ul
+          id="mobile-sections"
+          className="mb-2 flex flex-col gap-1 rounded-2xl bg-[#1f1e24]/95 p-2 shadow-xl backdrop-blur"
+        >
+          {SECTIONS.map((s) => (
+            <li key={s.id}>
+              <button
+                type="button"
+                onClick={() => pick(s.id)}
+                aria-current={active === s.id ? "true" : undefined}
+                className={`flex min-h-11 w-full items-center rounded-xl px-4 text-left text-sm text-[#D3DAD9] ${
+                  active === s.id ? "bg-[#612D53]" : "active:bg-white/10"
+                }`}
+              >
+                {s.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="mobile-sections"
+        aria-label="Menu navigasi bagian halaman"
+        className="ml-auto flex min-h-11 items-center gap-2 rounded-full bg-[#612D53] px-5 text-sm text-[#D3DAD9] shadow-lg"
+      >
+        {current.label}
+        <span aria-hidden="true">{open ? "×" : "☰"}</span>
+      </button>
+    </div>
+  );
+}
+
 /* ---------- Navigasi section: titik di sisi kanan, label muncul saat di-hover atau difokus ---------- */
 function SectionNav() {
   const [active, setActive] = useState(SECTIONS[0].id);
+  const lenis = useLenis();
 
   /* Section aktif = yang melewati garis tengah layar.
      Pakai ScrollTrigger (bukan IntersectionObserver) karena Hero bersifat sticky: ia selalu
@@ -189,14 +257,24 @@ function SectionNav() {
     });
   });
 
+  // Scroll lewat Lenis; kalau Lenis belum siap, pakai scroll biasa
   const go = (id) => {
-    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-    // Hero sticky: scrollIntoView tidak bergerak karena ia selalu sudah di atas layar
-    if (id === SECTIONS[0].id) window.scrollTo({ top: 0, behavior });
-    else document.getElementById(id)?.scrollIntoView({ behavior, block: "start" });
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (id === SECTIONS[0].id) {
+      lenis ? lenis.scrollTo(0, { immediate: reduce }) : window.scrollTo({ top: 0 });
+      return;
+    }
+
+    const el = document.getElementById(id);
+    if (!el) return;
+    lenis
+      ? lenis.scrollTo(el, { duration: 1.2, immediate: reduce })
+      : el.scrollIntoView({ block: "start" });
   };
 
   return (
+    <>
     <nav aria-label="Navigasi bagian halaman" className="fixed right-5 top-1/2 z-40 hidden -translate-y-1/2 text-white mix-blend-difference md:block">
       <ul className="flex flex-col items-end gap-4">
         {SECTIONS.map((s) => {
@@ -218,6 +296,8 @@ function SectionNav() {
         })}
       </ul>
     </nav>
+    <MobileNav active={active} go={go} />
+    </>
   );
 }
 
@@ -230,7 +310,8 @@ export default function LandingPage() {
     () => {
       const mm = gsap.matchMedia();
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
+      // Hero hanya sticky di md ke atas, jadi efek tirai juga hanya di sana
+      mm.add("(min-width: 768px) and (prefers-reduced-motion: no-preference)", () => {
         /* Transisi 1: About menimpa Hero seperti tirai.
            Hero mengecil, meredup, dan sedikit turun supaya terasa menjauh. */
         gsap.to(heroWrap.current, {
@@ -246,6 +327,9 @@ export default function LandingPage() {
           },
         });
 
+      });
+
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
         /* Progress halaman */
         gsap.fromTo(
           ".page-progress",
@@ -266,11 +350,13 @@ export default function LandingPage() {
       /* Setelah About menutupi Hero sepenuhnya, sembunyikan Hero.
          Hero sticky tetap ada di belakang sepanjang halaman, jadi tanpa ini link dan tombolnya
          masih bisa terkena Tab dan dibaca screen reader, dan browser tetap menggambarnya. */
-      ScrollTrigger.create({
-        trigger: aboutWrap.current,
-        start: "top top",
-        onEnter: () => gsap.set(heroWrap.current, { visibility: "hidden" }),
-        onLeaveBack: () => gsap.set(heroWrap.current, { visibility: "visible" }),
+      mm.add("(min-width: 768px)", () => {
+        ScrollTrigger.create({
+          trigger: aboutWrap.current,
+          start: "top top",
+          onEnter: () => gsap.set(heroWrap.current, { visibility: "hidden" }),
+          onLeaveBack: () => gsap.set(heroWrap.current, { visibility: "visible" }),
+        });
       });
 
       /* Font Bricolage mengubah ukuran teks setelah dimuat. Posisi trigger yang sudah
@@ -285,6 +371,7 @@ export default function LandingPage() {
 
   return (
     <div ref={page}>
+      <SmoothScroll />
       <div aria-hidden="true" className="page-progress pointer-events-none fixed left-0 top-0 z-50 h-0.5 w-full bg-[#715A5A]" />
       <SectionNav />
 
@@ -292,7 +379,7 @@ export default function LandingPage() {
         <Hero />
       </div>
 
-      <div id="s-about" ref={aboutWrap} className="relative z-10 overflow-clip rounded-t-[3rem]">
+      <div id="s-about" ref={aboutWrap} className="relative z-10 overflow-clip rounded-t-[1.75rem] md:rounded-t-[3rem]">
         <About />
       </div>
 
